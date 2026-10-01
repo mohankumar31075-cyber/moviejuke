@@ -20,8 +20,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js",
+    "build": "node scripts/build-static.js",
     "build:static": "node scripts/build-static.js",
+    "dev": "node --watch server.js",
     "serve:static": "python3 -m http.server 4174 --directory dist",
     "test": "node scripts/smoke.js",
     "test:render": "node scripts/dom-harness.mjs",

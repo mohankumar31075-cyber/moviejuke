@@ -138,6 +138,7 @@ Moviejuke ships in two shapes, and every path below is already wired up in this 
 | Path | What runs | Cost |
 | --- | --- | --- |
 | **GitHub Pages** (`pages.yml`) | Prerendered static build — no server, no secrets | free |
+| **Netlify** (`netlify.toml`) | Prerendered static build — build command `npm run build`, publish `dist` | free |
 | **Container** (`docker.yml` → GHCR) | Full app: live API, download queue, persisted state | free registry |
 | **Render / Fly / Railway / any VPS** | Full app via the bundled blueprints | free tiers available |
 
@@ -175,6 +176,33 @@ The `Container` workflow publishes multi-arch images to GHCR on every push to `m
 
 ```bash
 docker run -p 8080:8080 ghcr.io/<owner>/moviejuke:latest
+```
+
+### Netlify
+
+`netlify.toml` is checked in, so importing the repository is all that is needed:
+build command `npm run build`, publish directory `dist`, Node 22, and cache/security headers.
+
+```
+Add new site → Import an existing project → pick this repo → Deploy
+```
+
+**Netlify cannot run the Node server.** It serves static files, so `node server.js` (the live API, download
+queue and state file) will not start there. Netlify must publish the prerendered `dist/` build, where the
+client resolves everything in the browser.
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `Page not found` at the site root | Publish directory is the **repository root**, which has no `index.html` | Set publish directory to `dist` (picked up automatically from `netlify.toml`) |
+| Page loads, then a red card: *"Cannot reach the Moviejuke backend."* | Publishing **`public/`** — that is the raw client, which expects the Node API at `/api/*` | Publish `dist/` instead, or use a host that runs Node (Render, Fly, Railway, Docker) |
+| Deploy log: *"build.command failed"* / missing `build` script | Platform default is `npm run build` | `package.json` now defines `build` as an alias for the static build |
+| Deploy succeeded but the site 404s | The deploy is unpublished, or the site is still building | Check the **Deploys** tab for a published deploy; the first build takes ~1 minute |
+
+Verify locally exactly what Netlify will serve:
+
+```bash
+npm run build          # → dist/
+npm run serve:static   # → http://localhost:4174  (same artifact, no backend)
 ```
 
 ### 3. One-click hosts

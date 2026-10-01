@@ -1,0 +1,56 @@
+# Netlify configuration.
+#
+# Netlify serves static files only — it cannot run `node server.js`, because
+# that process backs the live API, the download queue and the state file.
+# So this repository deploys the prerendered build instead:
+#
+#     npm run build   →  dist/
+#
+# In dist/ the whole catalogue (plus live schedules and all title payloads) is
+# static JSON, and the client resolves search, playback, the download queue,
+# the library and settings in the browser. Nothing server-side is required.
+#
+# Import the repo at app.netlify.com → Add new site → Import an existing
+# project. Netlify reads everything below automatically; no dashboard settings
+# need to be changed.
+
+[build]
+  # `npm run build` is an alias for `node scripts/build-static.js`
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  # The app has zero runtime dependencies. jsdom is only used by the optional
+  # render harness, so skip devDependencies to keep builds fast.
+  NPM_FLAGS = "--omit=dev"
+
+# The client is hash-routed (#/browse, #/title/…), so no SPA rewrite rules are
+# needed — and adding a catch-all would break /api/*.json by returning HTML.
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Cache-Control = "public, max-age=300"
+
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/css/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
