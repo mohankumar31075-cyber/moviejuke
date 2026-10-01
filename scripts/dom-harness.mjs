@@ -16,8 +16,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const CLIENT = path.join(ROOT, 'public', 'js');
-const BASE = process.env.MJ_BASE || `http://127.0.0.1:${process.env.MJ_PORT || 4173}`;
+const MODE = process.env.MJ_MODE === 'static' ? 'static' : 'http';
+const CLIENT = path.join(ROOT, MODE === 'static' ? 'dist' : 'public', 'js');
+const BASE = process.env.MJ_BASE || `http://127.0.0.1:${process.env.MJ_PORT || (MODE === 'static' ? 4174 : 4173)}`;
 const SCRATCH = path.join(process.env.TMPDIR || '/tmp', 'moviejuke-dom');
 
 let JSDOM;
@@ -49,9 +50,16 @@ global.cancelAnimationFrame = window.cancelAnimationFrame.bind(window);
 global.URLSearchParams = URLSearchParams;
 global.location = window.location;
 global.CustomEvent = window.CustomEvent;
+Object.defineProperty(global, 'localStorage', { value: window.localStorage, configurable: true, writable: true });
 
 const realFetch = globalThis.fetch.bind(globalThis);
 global.fetch = (input, init) => realFetch(typeof input === 'string' && input.startsWith('/') ? BASE + input : input, init);
+
+// the static transport is chosen at module-load time, before api.js is imported
+if (MODE === 'static') {
+  window.__MJ_STATIC__ = true;
+  window.__MJ_STATIC_BASE__ = `${BASE}/api`;
+}
 
 const errors = [];
 window.addEventListener('error', (e) => errors.push(`window error: ${e.message}`));

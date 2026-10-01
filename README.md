@@ -10,8 +10,9 @@ Zero runtime dependencies — Node's standard library on the server, plain ES mo
 No build step, no bundler, no CDN.
 
 ```bash
-node server.js          # → http://localhost:4173
+node server.js          # → http://localhost:4173   (full app: API + queue + state)
 npm test                # 61 API/queue checks, no dependencies required
+npm run build:static    # → dist/ prerendered site for static hosting
 ```
 
 ---
@@ -72,12 +73,18 @@ moviejuke/
 │   ├── css/app.css        # design system + nine themes via CSS custom properties
 │   └── js/
 │       ├── app.js         # shell: routing, chrome, palette, keyboard, status bar
-│       ├── api.js         # fetch client + store + settings application
+│       ├── api.js         # transport selection: HTTP client or static client
+│       ├── api-local.js   # static transport: prerendered data + localStorage
+│       ├── state.js       # shared store, toasts, theme + settings persistence
 │       ├── art.js         # procedural cover art + icon set
 │       ├── components.js  # hyperscript, cards, shelves, modals, toasts, player
 │       ├── flows.js       # play / download / resolver-failure flows
 │       └── views/         # home, browse, title, live, downloads, library, settings
-└── scripts/smoke.js       # dependency-free end-to-end test
+├── scripts/
+│   ├── smoke.js           # dependency-free end-to-end API test
+│   ├── build-static.js    # prerenders dist/ for GitHub Pages
+│   └── dom-harness.mjs    # optional jsdom render suite (both transports)
+└── deploy: Dockerfile · docker-compose.yml · render.yaml · fly.toml · railway.json · Procfile
 ```
 
 ### Design notes
@@ -124,6 +131,113 @@ boost → delete → complete → retire to history).
 The client itself was validated with a jsdom render harness that boots every view, asserts DOM structure
 and exercises the play picker and resolver-failure modals (22 checks).
 
+## Deployment
+
+Moviejuke ships in two shapes, and every path below is already wired up in this repository.
+
+| Path | What runs | Cost |
+| --- | --- | --- |
+| **GitHub Pages** (`pages.yml`) | Prerendered static build — no server, no secrets | free |
+| **Container** (`docker.yml` → GHCR) | Full app: live API, download queue, persisted state | free registry |
+| **Render / Fly / Railway / any VPS** | Full app via the bundled blueprints | free tiers available |
+
+### 1. GitHub Pages (static, zero infrastructure)
+
+The Pages workflow prerenders the entire catalogue (`npm run build:static` → `dist/`) and publishes it.
+Search, stream resolution, the download queue, library and settings all run in the browser against that
+prerendered data, with `localStorage` for per-visitor state.
+
+```
+Settings → Pages → Build and deployment → Source: GitHub Actions
+Actions  → Deploy to GitHub Pages → Run workflow
+```
+
+Live at `https://<owner>.github.io/<repo>/`. The workflow also asks GitHub to enable Pages on its own
+(`configure-pages` with `enablement: true`), so it usually needs no manual step at all.
+
+To preview the same artifact locally:
+
+```bash
+npm run build:static     # writes dist/  (~1.3 MB, 70 title payloads + catalogue)
+npm run serve:static     # → http://localhost:4174
+```
+
+### 2. Container (full app)
+
+```bash
+docker build -t moviejuke .
+docker run -p 8080:8080 moviejuke          # → http://localhost:8080
+# or, with persistent state:
+docker compose up --build
+```
+
+The `Container` workflow publishes multi-arch images to GHCR on every push to `main`:
+
+```bash
+docker run -p 8080:8080 ghcr.io/<owner>/moviejuke:latest
+```
+
+### 3. One-click hosts
+
+Each file is ready to use — no edits required beyond picking your region/plan.
+
+<details>
+<summary><b>Render</b> — <code>render.yaml</code> blueprint</summary>
+
+Dashboard → **New → Blueprint** → select this repository. Render reads `render.yaml`
+(Node runtime, no build step because there are no dependencies) and health-checks `/healthz`.
+</details>
+
+<details>
+<summary><b>Fly.io</b> — <code>fly.toml</code></summary>
+
+```bash
+fly launch --copy-config --name moviejuke
+fly deploy
+fly volumes create moviejuke_data --size 1   # optional: persist state, then unmount-block in fly.toml
+```
+</details>
+
+<details>
+<summary><b>Railway</b> — <code>railway.json</code></summary>
+
+New Project → **Deploy from GitHub repo** → Railway picks up `railway.json`
+(Nixpacks build, `node server.js`, `/healthz` health check).
+</details>
+
+<details>
+<summary><b>Any VPS / systemd</b></summary>
+
+```bash
+git clone <this repo> /opt/moviejuke && cd /opt/moviejuke
+node server.js                      # behind nginx/caddy; set PORT and HOST as needed
+```
+
+`Procfile` is included for Procfile-based platforms (`web: node server.js`).
+</details>
+
+### Production behaviour
+
+| Concern | Handling |
+| --- | --- |
+| Port / bind | `PORT` (default `4173`, or `8080` in the image) and `HOST` (default `0.0.0.0`) |
+| Health checks | `/healthz` and `/readyz` return `{ ok, version, uptime, node }` |
+| Compression | gzip for HTML/JS/CSS/JSON/SVG over 1 KB (title detail: 18 KB → 3.9 KB) |
+| Caching | `no-cache` for HTML, `max-age=3600` for assets, weak `ETag` + `304` support |
+| Security headers | `nosniff`, `Referrer-Policy: no-referrer`, DNS-prefetch off, minimal permissions policy — deliberately **no** frame-blocking so preview panes keep working |
+| Graceful shutdown | `SIGTERM`/`SIGINT` flush the state file before exit |
+| Logging | `MJ_LOG=1` emits one access-log line per request |
+| Scaling caveat | State is one JSON file, so run **one** replica per host (or mount a volume). Swap `data/state.json` for a database to scale horizontally. |
+| SPA routing | Unknown extension-less paths fall back to `index.html`; the client is hash-routed, so no rewrite rules are needed |
+
+### CI
+
+| Workflow | Trigger | What it does |
+| --- | --- | --- |
+| `ci.yml` | every push / PR | syntax-checks all modules, runs the 61-assertion API suite, then the jsdom render suite against **both** transports (server + static artifact) |
+| `pages.yml` | push to `main`, manual | builds `dist/`, verifies the artifact is self-contained, publishes to GitHub Pages |
+| `docker.yml` | push to `main`/tags, PRs | builds the image, publishes to GHCR, then boots the container and curls `/healthz` and `/api/meta` |
+
 ## Browser support
 
 The client targets evergreen browsers: it leans on CSS custom properties, `color-mix()`, CSS grid,
@@ -139,3 +253,6 @@ affiliated with, endorsed by, or connected to that project, MovieBox, 4KHDHub, S
 All titles, artwork, metadata, channels, providers and network statistics in this repository are fictional or
 generated. The app deliberately integrates no scraper, torrent client or third-party media endpoint, and is
 intended as a UI/architecture demo.
+
+Deploying the static build makes that explicit: the Pages version runs entirely in your browser against a
+prerendered catalogue, and stores favorites, history and the download queue in `localStorage`.

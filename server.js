@@ -14,6 +14,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
 const { URL } = require('url');
 
 const engine = require('./data/engine');
@@ -30,6 +31,19 @@ const VERSION = '1.0.0';
 // seconds instead of minutes. Defaults are the shipping values.
 const TICK_MS = Number(process.env.MJ_TICK_MS || 700);
 const SIM_SPEED = Number(process.env.MJ_SIM_SPEED || 1);
+
+// Hosting knobs. MJ_LOG=1 emits one access-log line per request; gzip is on by
+// default for text responses over 1 KB.
+const ACCESS_LOG = process.env.MJ_LOG === '1';
+const COMPRESS_MIN = 1024;
+const SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'no-referrer',
+  'X-DNS-Prefetch-Control': 'off',
+  'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
+  // deliberately no X-Frame-Options / frame-ancestors: the app is embedded in
+  // preview panes by design
+};
 
 // ---------------------------------------------------------------- state
 
@@ -219,14 +233,51 @@ const MIME = {
 };
 
 function sendJson(res, body, status = 200) {
-  const payload = JSON.stringify(body);
-  res.writeHead(status, {
+  const payload = Buffer.from(JSON.stringify(body));
+  const accepts = res.req?.headers['accept-encoding'] || '';
+  const headers = {
+    ...SECURITY_HEADERS,
     'Content-Type': 'application/json; charset=utf-8',
     'Cache-Control': 'no-store',
-    'Content-Length': Buffer.byteLength(payload),
-  });
+    Vary: 'Accept-Encoding',
+  };
+  if (payload.length >= COMPRESS_MIN && /\bgzip\b/.test(accepts)) {
+    const gz = zlib.gzipSync(payload);
+    res.writeHead(status, { ...headers, 'Content-Encoding': 'gzip', 'Content-Length': gz.length });
+    res.end(gz);
+    return;
+  }
+  res.writeHead(status, { ...headers, 'Content-Length': payload.length });
   res.end(payload);
 }
+
+/** Serve a buffer, compressing text and honouring conditional requests. */
+function sendAsset(req, res, buf, contentType, cacheControl) {
+  const etag = `W/"${buf.length.toString(16)}-${(statTag[req.url] || 0).toString(16)}"`;
+  const headers = {
+    ...SECURITY_HEADERS,
+    'Content-Type': contentType,
+    'Cache-Control': cacheControl,
+    Vary: 'Accept-Encoding',
+    ETag: etag,
+  };
+  if (req.headers['if-none-match'] === etag) {
+    res.writeHead(304, headers);
+    res.end();
+    return;
+  }
+  const compressible = /^(text\/|application\/(json|manifest|javascript)|image\/svg)/.test(contentType);
+  if (compressible && buf.length >= COMPRESS_MIN && /\bgzip\b/.test(req.headers['accept-encoding'] || '')) {
+    const gz = zlib.gzipSync(buf);
+    res.writeHead(200, { ...headers, 'Content-Encoding': 'gzip', 'Content-Length': gz.length });
+    res.end(gz);
+    return;
+  }
+  res.writeHead(200, { ...headers, 'Content-Length': buf.length });
+  res.end(buf);
+}
+
+const statTag = Object.create(null);
 
 function readBody(req) {
   return new Promise((resolve) => {
@@ -258,23 +309,28 @@ function serveStatic(req, res, pathname) {
     res.writeHead(403).end('Forbidden');
     return;
   }
-  fs.readFile(target, (err, buf) => {
-    if (err) {
+  fs.stat(target, (statErr, stat) => {
+    if (statErr || !stat.isFile()) {
       if (!path.extname(rel)) {
         fs.readFile(path.join(PUBLIC_DIR, 'index.html'), (e2, index) => {
-          if (e2) res.writeHead(404).end('Not found');
-          else res.writeHead(200, { 'Content-Type': MIME['.html'] }).end(index);
+          if (e2) res.writeHead(404, { ...SECURITY_HEADERS, 'Content-Type': 'text/plain' }).end('Not found');
+          else sendAsset(req, res, index, MIME['.html'], 'no-cache');
         });
         return;
       }
-      res.writeHead(404, { 'Content-Type': 'text/plain' }).end('Not found');
+      res.writeHead(404, { ...SECURITY_HEADERS, 'Content-Type': 'text/plain' }).end('Not found');
       return;
     }
-    res.writeHead(200, {
-      'Content-Type': MIME[path.extname(target)] || 'application/octet-stream',
-      'Cache-Control': 'no-cache',
+    statTag[req.url] = stat.mtimeMs;
+    const ext = path.extname(target);
+    const cache = ext === '.html' ? 'no-cache' : 'public, max-age=3600';
+    fs.readFile(target, (err, buf) => {
+      if (err) {
+        res.writeHead(404, { ...SECURITY_HEADERS, 'Content-Type': 'text/plain' }).end('Not found');
+        return;
+      }
+      sendAsset(req, res, buf, MIME[ext] || 'application/octet-stream', cache);
     });
-    res.end(buf);
   });
 }
 
@@ -285,7 +341,7 @@ async function handleApi(req, res, url) {
   const q = Object.fromEntries(url.searchParams.entries());
   const method = req.method.toUpperCase();
 
-  if (pathname === '/api/health') {
+  if (pathname === '/healthz' || pathname === '/readyz' || pathname === '/api/health') {
     return sendJson(res, { ok: true, version: VERSION, uptime: process.uptime(), node: process.version });
   }
 
@@ -521,6 +577,12 @@ const CHANGELOG = [
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  if (ACCESS_LOG) {
+    const started = Date.now();
+    res.on('finish', () => {
+      console.log(`${req.method} ${url.pathname}${url.search} → ${res.statusCode} ${Date.now() - started}ms`);
+    });
+  }
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'content-type');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
@@ -553,10 +615,13 @@ server.listen(PORT, HOST, () => {
   if (SIM_SPEED !== 1 || TICK_MS !== 700) console.log(`  sim    : tick=${TICK_MS}ms speed=${SIM_SPEED}x`);
 });
 
-process.on('SIGTERM', () => {
+function shutdown() {
   try {
     fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true });
     fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
   } catch { /* ignore */ }
   process.exit(0);
-});
+}
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);

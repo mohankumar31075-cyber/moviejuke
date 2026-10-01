@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: API + queue suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Syntax check every module
+        run: |
+          set -e
+          for f in server.js data/*.js scripts/*.js public/js/*.js public/js/views/*.js; do
+            cp "$f" /tmp/check.mjs
+            node --check /tmp/check.mjs
+          done
+          echo "all modules parse"
+
+      - name: Smoke test (61 assertions, no dependencies)
+        run: node scripts/smoke.js
+
+  render:
+    name: Client render suite (jsdom)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install jsdom for the render harness
+        run: npm install --no-save jsdom
+
+      - name: Start server
+        run: |
+          node server.js --port=4173 &
+          for i in $(seq 1 40); do
+            curl -fsS http://127.0.0.1:4173/healthz && break || sleep 0.5
+          done
+
+      - name: Render every view (HTTP transport)
+        run: MJ_BASE=http://127.0.0.1:4173 node scripts/dom-harness.mjs
+
+      - name: Build the static artifact
+        run: node scripts/build-static.js
+
+      - name: Serve the static artifact
+        run: |
+          python3 -m http.server 4174 --directory dist &
+          for i in $(seq 1 20); do
+            curl -fsS http://127.0.0.1:4174/api/meta.json >/dev/null && break || sleep 0.5
+          done
+
+      - name: Render every view (static transport, no backend)
+        run: MJ_MODE=static MJ_BASE=http://127.0.0.1:4174 node scripts/dom-harness.mjs

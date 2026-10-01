@@ -2,6 +2,9 @@
 data/state.json
 moviejuke-smoke-*.json
 
+# static build output (produced by `npm run build:static`)
+dist/
+
 # tooling
 node_modules/
 npm-debug.log*

@@ -1,13 +1,25 @@
-/** Thin API client + app-wide store for Moviejuke. */
+/**
+ * API client.
+ *
+ * Two transports are available and share one interface:
+ *   - HTTP   : the Node server in this repository (default)
+ *   - static : prerendered JSON produced by `scripts/build-static.js`, used for
+ *              hosting on a plain static host such as GitHub Pages
+ *
+ * The static transport is selected by setting `window.__MJ_STATIC__ = true`
+ * before this module loads (the build injects that flag into index.html).
+ */
+
+import { store, toast, applySettings, updateSettings, setSettingsSaver } from './state.js';
+
+export { store, toast, applySettings, updateSettings };
 
 const json = async (res) => {
-  let body = null;
   try {
-    body = await res.json();
+    return await res.json();
   } catch {
-    body = null;
+    return null;
   }
-  return body;
 };
 
 async function req(path, opts = {}) {
@@ -26,7 +38,15 @@ async function req(path, opts = {}) {
   return body;
 }
 
-export const api = {
+function clean(params = {}) {
+  const out = {};
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== '') out[k] = v;
+  });
+  return out;
+}
+
+export const httpApi = {
   meta: () => req('/api/meta'),
   home: (profile) => req(`/api/home?profile=${profile}`),
   browse: (params) => req(`/api/browse?${new URLSearchParams(clean(params))}`),
@@ -45,61 +65,13 @@ export const api = {
   launch: () => req('/api/stats', { method: 'POST', body: { action: 'launch' } }),
 };
 
-function clean(params = {}) {
-  const out = {};
-  Object.entries(params).forEach(([k, v]) => {
-    if (v !== undefined && v !== null && v !== '') out[k] = v;
-  });
-  return out;
-}
-
-/* ------------------------------------------------------------------- store */
-
-const listeners = new Set();
-
-export const store = {
-  state: {
-    meta: null,
-    settings: null,
-    profiles: [],
-    profile: null,
-    stats: null,
-    toasts: [],
-  },
-  get() {
-    return this.state;
-  },
-  set(patch) {
-    this.state = { ...this.state, ...patch };
-    listeners.forEach((fn) => fn(this.state));
-  },
-  subscribe(fn) {
-    listeners.add(fn);
-    return () => listeners.delete(fn);
-  },
-};
-
-export function toast(message, kind = 'info', ms = 3600) {
-  const id = Math.random().toString(36).slice(2);
-  store.set({ toasts: [...store.get().toasts, { id, message, kind }] });
-  setTimeout(() => {
-    store.set({ toasts: store.get().toasts.filter((t) => t.id !== id) });
-  }, ms);
-}
-
-/** Apply server settings to the document (theme, accent, density, motion). */
-export function applySettings(settings) {
-  if (!settings) return;
-  const root = document.documentElement;
-  root.dataset.theme = settings.theme || 'Moviejuke';
-  if (settings.accent) root.style.setProperty('--accent', settings.accent);
-  root.style.setProperty('--density', settings.density === 'compact' ? '0.92' : settings.density === 'spacious' ? '1.08' : '1');
-  root.dataset.motion = settings.reduceMotion ? 'reduced' : 'full';
-}
-
-export async function updateSettings(patch) {
-  const res = await api.settings(patch);
-  store.set({ settings: res.settings });
-  applySettings(res.settings);
+setSettingsSaver(async (patch) => {
+  const res = await httpApi.settings(patch);
   return res.settings;
-}
+});
+
+const isStatic = typeof window !== 'undefined' && window.__MJ_STATIC__ === true;
+const local = isStatic ? await import('./api-local.js') : null;
+
+/** Active transport. Views only ever talk to this object. */
+export const api = local ? local.staticApi : httpApi;

@@ -2,8 +2,17 @@
   "name": "moviejuke",
   "version": "1.0.0",
   "private": true,
-  "description": "Moviejuke — terminal-grade discovery, streaming and download UI for movies, series, anime, Asian dramas and live TV, rebuilt as a zero-dependency web app.",
-  "keywords": ["movies", "series", "anime", "streaming", "downloads", "live-tv", "ui", "demo"],
+  "description": "Moviejuke - terminal-grade discovery, streaming and download UI for movies, series, anime, Asian dramas and live TV, rebuilt as a zero-dependency web app.",
+  "keywords": [
+    "movies",
+    "series",
+    "anime",
+    "streaming",
+    "downloads",
+    "live-tv",
+    "ui",
+    "demo"
+  ],
   "license": "MIT",
   "engines": {
     "node": ">=18"
@@ -12,9 +21,24 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
+    "build:static": "node scripts/build-static.js",
+    "serve:static": "python3 -m http.server 4174 --directory dist",
     "test": "node scripts/smoke.js",
+    "test:render": "node scripts/dom-harness.mjs",
+    "test:render:static": "MJ_MODE=static node scripts/dom-harness.mjs",
     "port": "node server.js --port=8080"
   },
   "dependencies": {},
-  "devDependencies": {}
+  "devDependencies": {
+    "jsdom": "^25.0.1"
+  },
+  "files": [
+    "server.js",
+    "data",
+    "public",
+    "scripts",
+    "Dockerfile",
+    "docker-compose.yml",
+    "README.md"
+  ]
 }
