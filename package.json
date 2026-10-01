@@ -1,0 +1,20 @@
+{
+  "name": "moviejuke",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Moviejuke — terminal-grade discovery, streaming and download UI for movies, series, anime, Asian dramas and live TV, rebuilt as a zero-dependency web app.",
+  "keywords": ["movies", "series", "anime", "streaming", "downloads", "live-tv", "ui", "demo"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node scripts/smoke.js",
+    "port": "node server.js --port=8080"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

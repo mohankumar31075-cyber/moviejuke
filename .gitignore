@@ -1,0 +1,13 @@
+# runtime state (favorites, history, download queue) — regenerated on demand
+data/state.json
+moviejuke-smoke-*.json
+
+# tooling
+node_modules/
+npm-debug.log*
+*.log
+
+# editors / os
+.DS_Store
+.idea/
+.vscode/
