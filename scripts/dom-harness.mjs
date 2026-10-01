@@ -121,6 +121,8 @@ try {
   check('title: episode rows', eps.querySelectorAll('.episode').length >= 8, `${eps.querySelectorAll('.episode').length} rows`);
   check('title: collection label', eps.textContent.includes('TV Series'));
 
+  // `favorite` toggles, so reset first to keep the suite idempotent across runs
+  await api.api.libraryAction('p1', { action: 'clear-favorites' });
   await api.api.libraryAction('p1', { action: 'progress', titleId: 'the-bear', position: 600, duration: 2040, season: 1, episode: 2 });
   await api.api.libraryAction('p1', { action: 'favorite', titleId: 'arrival' });
   const libMod = await import(`${SCRATCH}/views/library.js`);
