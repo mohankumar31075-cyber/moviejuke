@@ -43,10 +43,7 @@ async function boot() {
   try {
     meta = await api.meta();
   } catch (err) {
-    viewRoot.replaceChildren(h('div', { class: 'empty' },
-      h('div', { class: 'big' }, '!'),
-      h('div', {}, 'Cannot reach the Moviejuke backend.'),
-      h('div', { class: 'mono muted' }, err.message)));
+    viewRoot.replaceChildren(backendError(err));
     return;
   }
 
@@ -58,6 +55,32 @@ async function boot() {
   route();
   startStatusPolling();
   bindKeyboard();
+}
+
+/**
+ * Boot failure screen. The most common cause by far is hosting the raw
+ * `public/` folder on a static host: the client loads, then every /api call
+ * 404s. Turn that into an instruction instead of a stack trace.
+ */
+function backendError(err) {
+  const missingApi = err.status === 404 || err.status === 405;
+  const staticHost = /netlify|github\.io|vercel|pages\.dev|amazonaws|cloudfront/i.test(location.hostname);
+  const code = 'npm install' + String.fromCharCode(10) + 'npm run build      # -> dist/' + String.fromCharCode(10) + '# publish directory: dist';
+  return h('div', { class: 'empty', style: { textAlign: 'left', maxWidth: '760px', margin: '0 auto' } },
+    h('div', { class: 'big center' }, '!'),
+    h('div', { class: 'center', style: { fontSize: '16px', marginBottom: '14px' } }, 'Cannot reach the Moviejuke backend.'),
+    h('div', { class: 'code', style: { marginBottom: '16px' } }, `${location.origin}/api/meta -> ${err.status || 'unreachable'}`),
+    missingApi
+      ? h('div', {},
+        h('div', { class: 'eyebrow' }, 'Most likely cause'),
+        h('p', { style: { color: 'var(--text-2)', marginTop: '0' } },
+          'This looks like the raw client folder (public/) being served without the Node API. ',
+          'Static hosts cannot run node server.js - they must publish the prerendered build instead.'),
+        h('div', { class: 'eyebrow', style: { marginTop: '14px' } }, staticHost ? 'Fix on this host' : 'Fix'),
+        h('pre', { class: 'code' }, code))
+      : h('div', { class: 'muted mono' }, err.message),
+    h('div', { style: { display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '18px' } },
+      h('button', { class: 'btn sm primary', onclick: () => location.reload() }, 'Retry')));
 }
 
 /* ---------------------------------------------------------------- chrome */
