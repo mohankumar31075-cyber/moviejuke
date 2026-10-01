@@ -1,0 +1,17 @@
+# Render blueprint — https://render.com/docs/blueprint-spec
+# Dashboard: New → Blueprint → point at this repository.
+services:
+  - type: web
+    name: moviejuke
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: ""            # no dependencies, no build step
+    startCommand: node server.js
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0

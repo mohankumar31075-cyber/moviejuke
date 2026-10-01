@@ -1,0 +1,37 @@
+# Fly.io — https://fly.io/docs/reference/configuration/
+#   fly launch --copy-config --name moviejuke
+#   fly deploy
+app = "moviejuke"
+primary_region = "sin"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "8080"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "4s"
+    grace_period = "5s"
+    method = "GET"
+    path = "/healthz"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
+
+# Persist profiles / favorites / history / queue across restarts:
+#   fly volumes create moviejuke_data --size 1
+# then uncomment the mount below.
+# [mounts]
+#   source = "moviejuke_data"
+#   destination = "/app/data"
