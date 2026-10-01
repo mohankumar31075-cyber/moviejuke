@@ -147,13 +147,13 @@ The Pages workflow prerenders the entire catalogue (`npm run build:static` → `
 Search, stream resolution, the download queue, library and settings all run in the browser against that
 prerendered data, with `localStorage` for per-visitor state.
 
-```
-Settings → Pages → Build and deployment → Source: GitHub Actions
-Actions  → Deploy to GitHub Pages → Run workflow
-```
+**One-time step (repository admin):** `Settings → Pages → Build and deployment → Source: GitHub Actions`.
+After that, every push to `main` publishes automatically and the site lives at
+`https://<owner>.github.io/<repo>/`.
 
-Live at `https://<owner>.github.io/<repo>/`. The workflow also asks GitHub to enable Pages on its own
-(`configure-pages` with `enablement: true`), so it usually needs no manual step at all.
+The workflow builds and verifies the artifact first, then checks whether Pages is enabled: if it is not,
+the run still succeeds and the job summary explains exactly which toggle to flip, instead of failing with a
+permissions error.
 
 To preview the same artifact locally:
 
