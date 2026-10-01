@@ -10,7 +10,9 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    # the working branch is included temporarily so the pipeline can be
+    # verified live before the pull request lands on main
+    branches: [main, arena/01a0f752-moviejuke]
   workflow_dispatch:
 
 permissions:
