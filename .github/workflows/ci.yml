@@ -64,3 +64,12 @@ jobs:
 
       - name: Render every view (static transport, no backend)
         run: MJ_MODE=static MJ_BASE=http://127.0.0.1:4174 node scripts/dom-harness.mjs
+
+      # A ready-to-host static bundle: download it from the run page and drop it
+      # on any static host (Netlify Drop, Cloudflare Pages, S3, nginx, ...).
+      - name: Attach the static site bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: moviejuke-static-site-${{ github.sha }}
+          path: dist
+          retention-days: 30
