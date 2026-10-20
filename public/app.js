@@ -850,7 +850,7 @@
             </span>
             <span class="q-term ${hasQuery ? '' : 'q-term--none'}">${hasQuery ? `“${esc(row.keyword)}”` : 'Walk-in, referral or direct visit'}</span>
             <span class="q-meta">
-              ${row.productName ? `<span class="pill pill--product">${esc(row.productName)}</span>` : ''}
+              ${(row.interest || row.productName) ? `<span class="pill pill--product">${esc(row.interest || row.productName)}</span>` : ''}
               ${hasQuery ? `<span class="src">${sourceText(row.source)}</span>` : ''}
             </span>
           </span>
@@ -975,8 +975,8 @@
             <p class="q-label"><svg class="icon icon--tiny" style="width:11px;height:11px"><use href="#i-search"/></svg> Googled before enquiring</p>
             <p class="search-big"><span class="quo">“</span>${esc(customer.keyword)}<span class="quo">”</span></p>
             <div class="q-meta">
-              ${customer.productName ? `<span class="pill pill--product">${esc(customer.productName)}</span>` : ''}
-              ${sourcePill(customer.termSource || customer.source)}
+              ${(customer.interest || customer.productName) ? `<span class="pill pill--product">${esc(customer.interest || customer.productName)}</span>` : ''}
+              ${sourcePill(customer.source)}
             </div>
             <div class="q-meta">
               <span class="src" style="font-family:var(--font-mono);font-size:10.5px">${esc(customer.landingPage || 'landing page not recorded')}</span>
@@ -1038,6 +1038,14 @@
             <span>Device</span>
             <p>${esc(customer.device ? customer.device[0].toUpperCase() + customer.device.slice(1) : '—')}</p>
           </div>
+          <div class="detail">
+            <span>Property name</span>
+            <p>${esc(customer.propertyName || '—')}</p>
+          </div>
+          <div class="detail">
+            <span>Pin code</span>
+            <p>${esc(customer.pinCode || '—')}</p>
+          </div>
         </div>
       </section>
 
@@ -1054,7 +1062,7 @@
           </div>
           <div class="detail">
             <span>Interested in</span>
-            <p>${esc(customer.productName || '—')}</p>
+            <p>${esc(customer.interest || customer.productName || '—')}</p>
           </div>
           <div class="detail">
             <span>Owner</span>

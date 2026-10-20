@@ -359,11 +359,25 @@
             <input name="city" autocomplete="address-level2" placeholder="Whitefield, Bengaluru" />
           </label>
         </div>
+        <div class="form-row">
+          <label class="form-field">
+            <span>Property name</span>
+            <input name="propertyName" autocomplete="off" placeholder="Apartment or project name" />
+          </label>
+          <label class="form-field">
+            <span>Pin code</span>
+            <input name="pinCode" inputmode="numeric" autocomplete="postal-code" maxlength="10" placeholder="560066" />
+          </label>
+        </div>
         <label class="form-field">
           <span>What are you looking for?</span>
           <select name="productId" id="capture-product">
             <option value="">Not sure yet — help me choose</option>
           </select>
+        </label>
+        <label class="form-field">
+          <span>Something else you're interested in? <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted-2)">(optional)</span></span>
+          <input name="interest" placeholder="Describe the product or service" />
         </label>
         <label class="form-field">
           <span>What did you search for? <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted-2)">(optional)</span></span>
@@ -483,7 +497,10 @@
           phone: data.phone.trim(),
           email: data.email.trim(),
           city: data.city.trim(),
+          propertyName: data.propertyName.trim(),
+          pinCode: data.pinCode.trim(),
           productId: data.productId || null,
+          interest: data.interest.trim(),
           keyword: (data.keyword || rawQuery || '').trim(),
           notes: data.notes.trim(),
           source,

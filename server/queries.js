@@ -24,6 +24,7 @@ const SORTS = {
 const CUSTOMER_SELECT = `
   SELECT
     c.id, c.name, c.email, c.phone, c.city, c.stage, c.source,
+    c.interest, c.property_name AS propertyName, c.pin_code AS pinCode,
     c.budget, c.quote_value AS quoteValue, c.owner, c.gclid,
     c.landing_page AS landingPage, c.device, c.notes,
     c.created_at AS createdAt, c.last_activity_at AS lastActivityAt,
@@ -113,9 +114,11 @@ function buildCustomerWhere(filters) {
     clauses.push(`(
       LOWER(c.name) LIKE ? OR LOWER(COALESCE(c.email, '')) LIKE ? OR
       LOWER(COALESCE(c.phone, '')) LIKE ? OR LOWER(COALESCE(c.city, '')) LIKE ? OR
-      LOWER(COALESCE(s.keyword, '')) LIKE ? OR LOWER(COALESCE(p.name, '')) LIKE ?
+      LOWER(COALESCE(s.keyword, '')) LIKE ? OR LOWER(COALESCE(p.name, '')) LIKE ? OR
+      LOWER(COALESCE(c.interest, '')) LIKE ? OR LOWER(COALESCE(c.property_name, '')) LIKE ? OR
+      LOWER(COALESCE(c.pin_code, '')) LIKE ?
     )`);
-    params.push(like, like, like, like, like, like);
+    params.push(like, like, like, like, like, like, like, like, like);
   }
   if (filters.productId) {
     clauses.push('c.product_id = ?');
@@ -248,15 +251,19 @@ function createCustomer(payload) {
   const info = d
     .prepare(
       `INSERT INTO customers
-        (name, email, phone, city, product_id, search_term_id, source, stage, budget, quote_value,
+        (name, email, phone, city, interest, property_name, pin_code,
+         product_id, search_term_id, source, stage, budget, quote_value,
          owner, gclid, landing_page, device, notes, created_at, last_activity_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       String(payload.name || 'Unnamed enquiry').trim(),
       payload.email || null,
       payload.phone || null,
       payload.city || null,
+      String(payload.interest || '').trim().slice(0, 200) || null,
+      String(payload.propertyName || '').trim().slice(0, 200) || null,
+      String(payload.pinCode || '').trim().slice(0, 20) || null,
       payload.productId ? Number(payload.productId) : null,
       termId,
       payload.source || (termId ? 'google_organic' : 'direct'),
@@ -303,7 +310,9 @@ function updateCustomer(id, patch) {
 
   const fields = [];
   const params = [];
-  const allowed = ['name', 'email', 'phone', 'city', 'source', 'owner', 'notes', 'stage'];
+  const allowed = ['name', 'email', 'phone', 'city', 'interest', 'source', 'owner', 'notes', 'stage'];
+  if (patch.propertyName !== undefined) { fields.push('property_name = ?'); params.push(patch.propertyName); }
+  if (patch.pinCode !== undefined) { fields.push('pin_code = ?'); params.push(patch.pinCode); }
   for (const key of allowed) {
     if (patch[key] !== undefined) {
       fields.push(`${key} = ?`);

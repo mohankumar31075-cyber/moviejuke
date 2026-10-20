@@ -144,7 +144,29 @@ archived. If an older export does not exist, this app **cannot recover or invent
 
 ## CSV format
 
-Only `name` is required. Everything else is optional and matched by common aliases.
+### Requested enquiry format
+
+Download [`sample-data/authorised-enquiries-template.csv`](sample-data/authorised-enquiries-template.csv)
+(or use `GET /api/import/lead-template`). It contains **headers only, no customer data**:
+
+```csv
+Lead,Phone Number,Interested In,Search Term,Property Name,Pin Code,Enquiry Date
+```
+
+`Lead` → name, `Phone Number` → phone, `Interested In` → product/interest,
+`Search Term` → search query, `Property Name` → property, `Pin Code` → PIN (stored as
+text to preserve leading zeros). **Enquiry Date is required for a dated import** to place
+records in the correct year from January 2023 to today. Use `YYYY-MM-DD` or `DD/MM/YYYY`.
+If an interest does not match the product catalogue, it is still preserved verbatim.
+Once an authorised CRM export is supplied, the lead archive shows these fields and can
+export them using the exact same seven-column layout with **Export leads**. The app never
+finds identifiable Google searchers or generates personal contact details. Obtain the completed
+CSV from **your own CRM, website enquiry form, or authorised Google Ads lead-form export**; a
+Search Console query report is not an enquiry/contact export. There is currently **no completed
+authorised enquiry CSV in this repository**.
+
+For the general-purpose CRM format, only `name` is required. Everything else is optional
+and matched by common aliases; date is required when the historical window is selected.
 
 ```csv
 name,email,phone,city,product,keyword,stage,source,budget,quote_value,owner,notes,created_at
@@ -198,8 +220,10 @@ public/
 | `POST` | `/api/import/search?from=…&to=…&source=google_ads` | import dated query CSV; upsert matching observations |
 | `GET` | `/api/history?from=…&to=…` | monthly dated report and customer totals |
 | `POST` | `/api/demo/replace` | remove fictional records (requires admin password) |
-| `GET` | `/api/export` | CSV export honouring the customer filters |
-| `GET` | `/api/import/template` and `/api/import/search/template` | sample CSVs |
+| `GET` | `/api/export` | full customer CSV honouring the customer filters |
+| `GET` | `/api/export/leads?from=…&to=…` | requested seven-column lead CSV, with filtered dates |
+| `GET` | `/api/import/lead-template` | header-only seven-column lead template (no actual leads) |
+| `GET` | `/api/import/template` and `/api/import/search/template` | generic sample CSVs |
 | `POST` | `/api/demo/reset` | wipe and reseed the demo data |
 
 ---

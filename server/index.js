@@ -136,6 +136,8 @@ const FIELD_ALIASES = {
   email: ['email', 'email_address', 'mail', 'e_mail'],
   phone: ['phone', 'phone_number', 'mobile', 'contact_number', 'whatsapp', 'tel'],
   city: ['city', 'location', 'town'],
+  propertyName: ['property_name', 'property', 'project_name', 'apartment_name', 'building_name', 'society_name'],
+  pinCode: ['pin_code', 'pincode', 'postal_code', 'zip_code', 'zip'],
   product: ['product', 'product_name', 'product_searched', 'service', 'service_interest', 'interested_in'],
   keyword: ['keyword', 'search_term', 'query', 'search_query', 'google_search', 'searched_for', 'search_keyword'],
   stage: ['stage', 'status', 'pipeline_stage', 'lead_status'],
@@ -283,6 +285,9 @@ function runImport(csvText, { from = '', to = '' } = {}) {
         email: valueFor(record, 'email'),
         phone: valueFor(record, 'phone'),
         city: valueFor(record, 'city'),
+        interest: productRaw,
+        propertyName: valueFor(record, 'propertyName'),
+        pinCode: valueFor(record, 'pinCode'),
         productId: product ? product.id : null,
         keyword,
         source,
@@ -335,9 +340,16 @@ app.post('/api/import', (req, res) => {
   res.json(runImport(csvText, { from: req.query.from || '', to: req.query.to || '' }));
 });
 
+// Header-only: never bundle invented names or phone numbers with a lead template.
+app.get('/api/import/lead-template', (req, res) => {
+  res.type('text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename="authorised-enquiries-template.csv"');
+  res.send('Lead,Phone Number,Interested In,Search Term,Property Name,Pin Code,Enquiry Date\n');
+});
+
 app.get('/api/import/template', (req, res) => {
   const header = [
-    'name', 'email', 'phone', 'city', 'product', 'keyword', 'stage', 'source',
+    'name', 'email', 'phone', 'city', 'property_name', 'pin_code', 'product', 'keyword', 'stage', 'source',
     'budget', 'quote_value', 'owner', 'notes', 'created_at', 'landing_page', 'gclid', 'device',
   ];
   const sample = [
@@ -397,7 +409,7 @@ app.get('/api/export', (req, res) => {
     sort: 'newest',
   });
   const headers = [
-    'reference', 'name', 'email', 'phone', 'city', 'product', 'keyword', 'stage', 'source',
+    'reference', 'name', 'email', 'phone', 'city', 'property_name', 'pin_code', 'product', 'keyword', 'stage', 'source',
     'budget', 'quote_value', 'owner', 'landing_page', 'gclid', 'device', 'created_at', 'last_activity_at', 'notes',
   ];
   const mapped = rows.map((r) => ({
@@ -406,7 +418,9 @@ app.get('/api/export', (req, res) => {
     email: r.email,
     phone: r.phone,
     city: r.city,
-    product: r.productName,
+    property_name: r.propertyName,
+    pin_code: r.pinCode,
+    product: r.interest || r.productName,
     keyword: r.keyword,
     stage: r.stage,
     source: r.source,
@@ -430,6 +444,39 @@ app.get('/api/export', (req, res) => {
     : `${prefix}-customers.csv`;
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   res.send(toCsv(headers, mapped, headers));
+});
+
+// Exact column layout requested for authorised CRM exports. Filtering mirrors
+// the archive; demo exports are visibly marked and contain no real customers.
+app.get('/api/export/leads', (req, res) => {
+  const rows = q.listAllCustomers({
+    q: req.query.q || '',
+    productId: req.query.productId || '',
+    stages: String(req.query.stage || '').split(',').map((s) => s.trim()).filter(Boolean),
+    source: req.query.source || '',
+    city: req.query.city || '',
+    from: req.query.from || '',
+    to: req.query.to || '',
+    sort: 'newest',
+  });
+  const headers = ['Lead', 'Phone Number', 'Interested In', 'Search Term', 'Property Name', 'Pin Code', 'Enquiry Date'];
+  const mapped = rows.map((r) => ({
+    'Lead': r.name,
+    'Phone Number': r.phone,
+    'Interested In': r.interest || r.productName,
+    'Search Term': r.keyword,
+    'Property Name': r.propertyName,
+    'Pin Code': r.pinCode,
+    'Enquiry Date': r.createdAt?.slice(0, 10),
+  }));
+  const mode = connect().prepare("SELECT value FROM meta WHERE key = 'data_mode'").get()?.value;
+  const label = mode === 'real' ? 'leads' : 'DEMO-leads';
+  const from = dayFrom(req.query.from);
+  const to = dayFrom(req.query.to);
+  const filename = from && to ? `moviejuke-${label}-${from}-to-${to}.csv` : `moviejuke-${label}.csv`;
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.setHeader('Cache-Control', 'no-store');
+  res.type('text/csv').send(toCsv(headers, mapped, headers));
 });
 
 // Calendar-month history over the selected export window. Query stats only

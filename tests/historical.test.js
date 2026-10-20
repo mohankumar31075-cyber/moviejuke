@@ -37,6 +37,9 @@ test('dated export imports, authentication, deduplication and historical coverag
   assert.equal(archive.status, 200);
   assert.match(archive.data, /Lead archive · Moviejuke Interiors/);
   assert.match(archive.data, /id="lead-rows"/);
+  const template = await request('/api/import/lead-template');
+  assert.equal(template.status, 200);
+  assert.equal(template.data, 'Lead,Phone Number,Interested In,Search Term,Property Name,Pin Code,Enquiry Date\n');
   const demoExport = await fetch(`${base}/api/export?from=2023-01-01&to=2026-10-20`);
   assert.match(demoExport.headers.get('content-disposition'), /moviejuke-DEMO-leads-2023-01-01-to-2026-10-20\.csv/);
   assert.equal((await request('/api/import/search', csv('date,query,impressions,clicks\n2023-01-01,blinds,9,2', false))).status, 409);
@@ -60,24 +63,43 @@ test('dated export imports, authentication, deduplication and historical coverag
   assert.equal((await request('/api/search-terms?source=google_ads', { headers: basic })).data.rows.find((row) => row.keyword === 'blackout curtains bangalore').clicks, 7);
   assert.equal((await request('/api/search-terms?source=google_organic', { headers: basic })).data.rows.find((row) => row.keyword === 'blackout curtains bangalore').clicks, 10);
 
-  const enquiries = 'name,email,created_at,keyword,product,stage\nReal Enquiry,real@example.org,2023-01-05,blackout curtains bangalore,Blackout Curtains,won\nToo Old,old@example.org,2022-12-31,roller blinds bengaluru,Roller Blinds,new\nNo Date,bad@example.org,,roller blinds bengaluru,Roller Blinds,new\n';
+  const enquiries = 'Lead,Phone Number,Interested In,Search Term,Property Name,Pin Code,Enquiry Date,Stage\nFixture Enquiry,+910000000001,Custom Window Film,blackout curtains bangalore,Fixture Towers,000123,2023-01-05,won\nToo Old,+910000000002,Roller Blinds,roller blinds bengaluru,Old Flats,560001,2022-12-31,new\nNo Date,+910000000003,Roller Blinds,roller blinds bengaluru,Missing Date,560001,,new\n';
   result = await request('/api/import?from=2023-01-01&to=2026-10-20', csv(enquiries));
   assert.equal(result.data.imported, 1);
   assert.equal(result.data.skipped, 2);
   assert.equal((await request('/api/import?from=2023-01-01&to=2026-10-20', csv(enquiries))).data.imported, 0);
   assert.equal((await request('/api/reference', { headers: basic })).data.customerCount, 1);
   assert.equal((await request('/api/customers?from=2023-01-01&to=2023-01-05', { headers: basic })).data.total, 1);
+  const lead = (await request('/api/customers?from=2023-01-01&to=2023-01-05', { headers: basic })).data.rows[0];
+  assert.equal(lead.name, 'Fixture Enquiry');
+  assert.equal(lead.phone, '+910000000001');
+  assert.equal(lead.interest, 'Custom Window Film'); // unmatched interest is not thrown away
+  assert.equal(lead.productName, null);
+  assert.equal(lead.propertyName, 'Fixture Towers');
+  assert.equal(lead.pinCode, '000123'); // never coerce postal codes to numbers
+  assert.equal((await request('/api/customers?q=000123', { headers: basic })).data.total, 1);
   assert.equal((await request('/api/customers?from=2023-01-01&to=2023-01-04', { headers: basic })).data.total, 0);
   const filteredExport = await request('/api/export?from=2023-01-01&to=2023-01-05', { headers: basic });
   assert.equal(filteredExport.status, 200);
-  assert.match(filteredExport.data, /Real Enquiry/);
+  assert.match(filteredExport.data, /Fixture Enquiry/);
   assert.doesNotMatch(filteredExport.data, /Too Old/);
+  const leadExport = await request('/api/export/leads?from=2023-01-01&to=2023-01-05', { headers: basic });
+  assert.equal(leadExport.status, 200);
+  assert.match(leadExport.data, /^Lead,Phone Number,Interested In,Search Term,Property Name,Pin Code,Enquiry Date\n/);
+  assert.match(leadExport.data, /Fixture Enquiry,\+910000000001,Custom Window Film,blackout curtains bangalore,Fixture Towers,000123,2023-01-05/);
   const exportHeaders = await fetch(`${base}/api/export?from=2023-01-01&to=2023-01-05`, { headers: basic });
   assert.match(exportHeaders.headers.get('content-disposition'), /moviejuke-leads-2023-01-01-to-2023-01-05\.csv/);
   const history = (await request('/api/history?from=2023-01-01&to=2026-10-20', { headers: basic })).data;
   assert.equal(history.totals.impressions, 395);
   assert.equal(history.totals.customers, 1);
   assert.equal(history.months.length, 2);
+  const submitted = await request('/api/customers', {
+    method: 'POST', headers: { ...basic, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'Form Fixture', phone: '+910000000005', propertyName: 'Captured Property', pinCode: '000456' }),
+  });
+  assert.equal(submitted.status, 201);
+  assert.equal(submitted.data.propertyName, 'Captured Property');
+  assert.equal(submitted.data.pinCode, '000456');
   connect().prepare('DELETE FROM customers').run();
   ensureData();
   assert.equal((await request('/api/reference', { headers: basic })).data.customerCount, 0);

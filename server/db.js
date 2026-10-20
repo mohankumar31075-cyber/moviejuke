@@ -55,6 +55,9 @@ CREATE TABLE IF NOT EXISTS customers (
   email             TEXT,
   phone             TEXT,
   city              TEXT,
+  interest          TEXT,
+  property_name     TEXT,
+  pin_code          TEXT,
   product_id        INTEGER REFERENCES products(id) ON DELETE SET NULL,
   search_term_id    INTEGER REFERENCES search_terms(id) ON DELETE SET NULL,
   source            TEXT NOT NULL DEFAULT 'google_organic',
@@ -101,6 +104,12 @@ function connect() {
   db.exec('PRAGMA journal_mode = WAL;');
   db.exec('PRAGMA foreign_keys = ON;');
   db.exec(SCHEMA);
+  // Existing SQLite files predate the property/interest fields. Add them in
+  // place; never reset customer records just to upgrade the schema.
+  const columns = new Set(db.prepare('PRAGMA table_info(customers)').all().map((c) => c.name));
+  for (const column of ['interest', 'property_name', 'pin_code']) {
+    if (!columns.has(column)) db.exec(`ALTER TABLE customers ADD COLUMN ${column} TEXT`);
+  }
   return db;
 }
 

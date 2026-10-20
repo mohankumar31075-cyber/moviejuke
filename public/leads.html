@@ -58,7 +58,7 @@ main{max-width:1288px;margin:0 auto;padding:44px 24px 72px}.eyebrow{color:#86654
     <div class="filters">
       <label class="filter filter--date"><span>From</span><input type="date" id="from" aria-label="Start date" /></label>
       <label class="filter filter--date"><span>Through</span><input type="date" id="to" aria-label="End date" /></label>
-      <label class="filter filter--search"><span>Search name, phone or query</span><input type="search" id="search" placeholder="e.g. blackout curtains…" autocomplete="off" /></label>
+      <label class="filter filter--search"><span>Search lead, property, PIN or query</span><input type="search" id="search" placeholder="e.g. blackout curtains…" autocomplete="off" /></label>
       <label class="filter"><span>Product</span><select id="product"><option value="">All products</option></select></label>
       <label class="filter"><span>Stage</span><select id="stage"><option value="">All stages</option><option value="new">New enquiry</option><option value="contacted">Contacted</option><option value="qualified">Qualified</option><option value="quoted">Quoted</option><option value="won">Won</option><option value="lost">Lost</option></select></label>
       <label class="filter"><span>Source</span><select id="source"><option value="">All sources</option></select></label>
@@ -66,10 +66,10 @@ main{max-width:1288px;margin:0 auto;padding:44px 24px 72px}.eyebrow{color:#86654
       <button class="reset-btn" id="clear" type="button">Clear filters</button>
     </div>
     <div class="result-bar"><span id="result-count" role="status">Loading leads…</span><span><a id="export-inline" href="#" download>Download filtered CSV →</a></span></div>
-    <div class="table-scroll"><table class="lead-table"><thead><tr><th>Lead</th><th>Contact</th><th>Interested in</th><th>Search term</th><th>Status</th><th>Enquiry date</th><th></th></tr></thead><tbody id="lead-rows"></tbody></table><div class="empty" id="empty" hidden></div></div>
+    <div class="table-scroll"><table class="lead-table"><thead><tr><th>Lead</th><th>Phone number</th><th>Interested in</th><th>Property / Pin code</th><th>Search term</th><th>Status</th><th>Enquiry date</th><th></th></tr></thead><tbody id="lead-rows"></tbody></table><div class="empty" id="empty" hidden></div></div>
     <div class="pager"><span id="showing">—</span><div class="pager-controls"><button type="button" id="prev">← Previous</button><span id="page-label">Page 1</span><button type="button" id="next">Next →</button></div></div>
   </section>
-  <div class="footnote"><span>Search engines report aggregate traffic, not the identities of people who searched. This archive only contains your own recorded enquiries.</span><a href="/#/data">Bring in your CRM export →</a></div>
+  <div class="footnote"><span>Search engines report aggregate traffic, not the identities of people who searched. This archive only contains your own recorded enquiries. <strong>Enquiry Date is needed</strong> to place leads in the correct year.</span><span><a href="/api/import/lead-template" download>Download the 7-column CSV template</a> · <a href="/#/data">Import authorised records →</a></span></div>
 </main>
 <div class="overlay" id="overlay" hidden></div>
 <aside class="drawer" id="drawer" role="dialog" aria-label="Lead details" aria-modal="true" hidden>
@@ -116,7 +116,7 @@ main{max-width:1288px;margin:0 auto;padding:44px 24px 72px}.eyebrow{color:#86654
     $('range-line').textContent = `${dateText(state.from)} — ${dateText(state.to)}`;
     renderYears();
     for (const id of ['export-top', 'export-inline']) {
-      $(id).href = `/api/export?${query()}`;
+      $(id).href = `/api/export/leads?${query()}`;
     }
   }
   function showError(error) {
@@ -155,7 +155,8 @@ main{max-width:1288px;margin:0 auto;padding:44px 24px 72px}.eyebrow{color:#86654
       $('lead-rows').innerHTML = result.rows.map((r) => `<tr>
         <td><div class="person"><span class="avatar">${esc(initials(r.name))}</span><span><strong>${esc(r.name)}</strong><small>MJ-${String(r.id).padStart(4,'0')}</small></span></div></td>
         <td>${esc(r.phone || r.email || '—')}${r.phone && r.email ? `<small class="muted">${esc(r.email)}</small>` : ''}</td>
-        <td>${esc(r.productName || 'Not specified')}<small class="muted">${esc(r.city || 'City not captured')}</small></td>
+        <td>${esc(r.interest || r.productName || 'Not specified')}<small class="muted">${esc(r.city || 'City not captured')}</small></td>
+        <td>${esc(r.propertyName || '—')}<small class="muted">${esc(r.pinCode || 'PIN not captured')}</small></td>
         <td><div class="keyword" title="${esc(r.keyword || '')}">${r.keyword ? `“${esc(r.keyword)}”` : '—'}</div><small class="muted">${esc(label(r.source))}</small></td>
         <td><span class="pill pill--${esc(r.stage)}">${esc(stageNames[r.stage] || r.stage)}</span></td>
         <td>${dateText(r.createdAt)}</td>
@@ -177,7 +178,8 @@ main{max-width:1288px;margin:0 auto;padding:44px 24px 72px}.eyebrow{color:#86654
         <div><dt>Enquired</dt><dd>${dateText(r.createdAt)}</dd></div><div><dt>Stage</dt><dd>${esc(stageNames[r.stage] || label(r.stage))}</dd></div>
         <div><dt>Phone</dt><dd>${esc(r.phone || 'Not recorded')}</dd></div><div><dt>Email</dt><dd>${esc(r.email || 'Not recorded')}</dd></div>
         <div><dt>City</dt><dd>${esc(r.city || 'Not recorded')}</dd></div><div><dt>Source</dt><dd>${esc(label(r.source))}</dd></div>
-        <div><dt>Product</dt><dd>${esc(r.productName || 'Not specified')}</dd></div><div><dt>Quote / budget</dt><dd>${money(r.quoteValue || r.budget)}</dd></div>
+        <div><dt>Interested in</dt><dd>${esc(r.interest || r.productName || 'Not specified')}</dd></div><div><dt>Quote / budget</dt><dd>${money(r.quoteValue || r.budget)}</dd></div>
+        <div><dt>Property name</dt><dd>${esc(r.propertyName || 'Not recorded')}</dd></div><div><dt>Pin code</dt><dd>${esc(r.pinCode || 'Not recorded')}</dd></div>
       </dl><h3>Search attribution</h3><div class="search-block"><small>Query captured when this person enquired</small>${r.keyword ? `“${esc(r.keyword)}”` : 'No Google search query was captured for this enquiry.'}</div>
       <h3>Activity timeline</h3>${r.events?.length ? `<ol class="timeline">${r.events.map((event) => `<li>${esc(event.label)}<time>${dateText(event.occurredAt)}</time></li>`).join('')}</ol>` : '<p class="muted">No activities logged yet.</p>'}`;
       $('overlay').hidden = false;

@@ -380,7 +380,8 @@
             <details class="field-docs">
               <summary>What columns can I include?</summary>
               <div class="field-docs-body">
-                <p><strong>Only <code>name</code> is required.</strong> Everything else is optional and matched by common aliases.</p>
+                <p><strong>Only <code>name</code> is required for general imports; <code>enquiry_date</code> is required for historical dates.</strong> Column names are matched by common aliases.</p>
+                <p><a class="link" href="/api/import/lead-template" download>Download template: Lead · Phone Number · Interested In · Search Term · Property Name · Pin Code · Enquiry Date</a></p>
                 <dl>
                   <dt>keyword</dt><dd>The Google search term — also accepts <code>search_term</code>, <code>query</code>, <code>google_search</code>.</dd>
                   <dt>product</dt><dd>Product or service name. Fuzzy-matched to the catalogue.</dd>
@@ -502,6 +503,26 @@
         <label class="form-field">
           <span>Budget (₹)</span>
           <input name="budget" type="number" min="0" step="500" placeholder="25000" />
+        </label>
+      </div>
+      <div class="form-row">
+        <label class="form-field">
+          <span>Interested in (if not in catalogue)</span>
+          <input name="interest" placeholder="e.g. Custom window film" />
+        </label>
+        <label class="form-field">
+          <span>Property name</span>
+          <input name="propertyName" placeholder="Apartment or project name" />
+        </label>
+      </div>
+      <div class="form-row">
+        <label class="form-field">
+          <span>Pin code</span>
+          <input name="pinCode" inputmode="numeric" autocomplete="postal-code" placeholder="560066" />
+        </label>
+        <label class="form-field">
+          <span>Enquiry date</span>
+          <input name="createdAt" type="date" min="2023-01-01" />
         </label>
       </div>
       <label class="form-field">
