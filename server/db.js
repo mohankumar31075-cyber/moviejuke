@@ -31,6 +31,24 @@ CREATE TABLE IF NOT EXISTS search_terms (
   last_seen     TEXT
 );
 
+-- Dated report rows are kept separately so re-importing an export replaces the
+-- same observation instead of double-counting clicks or impressions.
+CREATE TABLE IF NOT EXISTS search_observations (
+  term_id       INTEGER NOT NULL REFERENCES search_terms(id) ON DELETE CASCADE,
+  day           TEXT NOT NULL,
+  source        TEXT NOT NULL,
+  landing_page  TEXT NOT NULL DEFAULT '',
+  impressions   INTEGER NOT NULL DEFAULT 0,
+  clicks        INTEGER NOT NULL DEFAULT 0,
+  position      REAL NOT NULL DEFAULT 0,
+  PRIMARY KEY (term_id, day, source, landing_page)
+);
+
+CREATE TABLE IF NOT EXISTS customer_imports (
+  fingerprint TEXT PRIMARY KEY,
+  customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS customers (
   id                INTEGER PRIMARY KEY AUTOINCREMENT,
   name              TEXT NOT NULL,
@@ -93,9 +111,14 @@ function isEmpty() {
 
 function ensureData() {
   const conn = connect();
-  if (isEmpty()) {
+  if (!conn.prepare("SELECT value FROM meta WHERE key = 'data_mode'").get() &&
+      conn.prepare("SELECT value FROM meta WHERE key = 'seeded_at'").get()) {
+    conn.prepare("INSERT INTO meta (key, value) VALUES ('data_mode', 'demo')").run();
+  }
+  if (isEmpty() && !conn.prepare("SELECT value FROM meta WHERE key = 'data_mode'").get()) {
     const { seed } = require('./seed');
     seed(conn);
+    conn.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('data_mode', 'demo')").run();
     conn
       .prepare('INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value')
       .run('seeded_at', new Date().toISOString());
@@ -107,7 +130,9 @@ function resetData() {
   const conn = connect();
   conn.exec(`
     DROP TABLE IF EXISTS events;
+    DROP TABLE IF EXISTS customer_imports;
     DROP TABLE IF EXISTS customers;
+    DROP TABLE IF EXISTS search_observations;
     DROP TABLE IF EXISTS search_terms;
     DROP TABLE IF EXISTS products;
     DROP TABLE IF EXISTS meta;
@@ -115,10 +140,32 @@ function resetData() {
   conn.exec(SCHEMA);
   const { seed } = require('./seed');
   seed(conn);
+  conn.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('data_mode', 'demo')").run();
   conn
     .prepare('INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value')
     .run('seeded_at', new Date().toISOString());
   return conn;
 }
 
-module.exports = { connect, ensureData, resetData, isEmpty, DB_PATH };
+function replaceDemo() {
+  const conn = connect();
+  const mode = conn.prepare("SELECT value FROM meta WHERE key = 'data_mode'").get();
+  if (mode?.value !== 'demo') {
+    const error = new Error('This workspace is not in demo mode. Existing real data was not deleted.');
+    error.status = 409;
+    throw error;
+  }
+  conn.exec('BEGIN');
+  try {
+    conn.exec('DELETE FROM events; DELETE FROM customer_imports; DELETE FROM customers; DELETE FROM search_observations; DELETE FROM search_terms;');
+    conn.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('data_mode', 'real')").run();
+    conn.prepare("DELETE FROM meta WHERE key = 'seeded_at'").run();
+    conn.exec('COMMIT');
+  } catch (error) {
+    conn.exec('ROLLBACK');
+    throw error;
+  }
+  return conn;
+}
+
+module.exports = { connect, ensureData, resetData, replaceDemo, isEmpty, DB_PATH };

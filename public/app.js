@@ -141,6 +141,8 @@
       productId: '',
       source: '',
       city: '',
+      from: '',
+      to: '',
       stages: [],
       termId: '',
       sort: 'newest',
@@ -215,6 +217,22 @@
   async function loadReference() {
     const ref = await api('/api/reference');
     state.reference = ref;
+    const isReal = ref.dataMode === 'real';
+    if (isReal && !state.historyDefaultApplied) {
+      state.customerFilters.from = $('#history-from').value;
+      state.customerFilters.to = $('#history-to').value;
+      $('#c-from').value = state.customerFilters.from;
+      $('#c-to').value = state.customerFilters.to;
+    }
+    if (isReal) state.historyDefaultApplied = true;
+    $('#workspace-label').textContent = isReal ? 'Private workspace' : 'Demo workspace';
+    $('#workspace-note').textContent = isReal
+      ? `${ref.customerCount} enquiries · ${ref.termCount} search terms. Keep this workspace private.`
+      : `${ref.customerCount} sample enquiries across ${ref.termCount} example searches.`;
+    $('#replace-panel').hidden = isReal;
+    $('#history-status').textContent = isReal
+      ? `Real-data workspace · ${ref.customerCount} customer records · ${ref.searchCoverage.rows} dated search rows${ref.searchCoverage.first ? ` (${ref.searchCoverage.first} – ${ref.searchCoverage.last})` : ''}. Import files below to populate the requested period.`
+      : 'Demo data only. No historical exports have been provided. Do not upload private customer data to this public preview; configure password protection on a private deployment first.';
     state.productLookup = new Map(ref.products.map((p) => [String(p.id), p]));
     $('#nav-term-count').textContent = ref.termCount;
     $('#nav-customer-count').textContent = ref.customerCount;
@@ -237,6 +255,7 @@
     citySelect.value = currentCity;
 
     renderStageChips();
+    await loadHistory();
   }
 
   /* =========================================================
@@ -260,7 +279,7 @@
     const from = new Date(range.from);
     const to = new Date(range.to);
     $('#overview-sub').textContent = `${kpis.customers} customers in the book · ${kpis.newCustomers} arrived ${fmtDate(from)} – ${fmtDate(to)} · every one traced to a Google search where possible.`;
-    $('#chart-sub').textContent = `Last ${state.rangeDays} days · ${compact(kpis.impressions)} impressions → ${compact(kpis.clicks)} clicks`;
+    $('#chart-sub').textContent = `Last ${state.rangeDays} days of enquiries · all imported reports: ${compact(kpis.impressions)} impressions → ${compact(kpis.clicks)} clicks`;
   }
 
   const sparkline = (values, stroke = '#2f6a5f') => {
@@ -765,6 +784,8 @@
     if (f.productId) params.set('productId', f.productId);
     if (f.source) params.set('source', f.source);
     if (f.city) params.set('city', f.city);
+    if (f.from) params.set('from', f.from);
+    if (f.to) params.set('to', f.to);
     if (f.termId) params.set('termId', f.termId);
     if (f.stages.length) params.set('stage', f.stages.join(','));
     params.set('sort', f.sort);
@@ -787,7 +808,7 @@
       renderActiveFilters();
 
       const f2 = state.customerFilters;
-      const filtered = Boolean(f2.q || f2.productId || f2.source || f2.city || f2.termId || f2.stages.length);
+      const filtered = Boolean(f2.q || f2.productId || f2.source || f2.city || f2.from || f2.to || f2.termId || f2.stages.length);
       $('#c-sub').textContent = filtered
         ? `${result.total} customers match these filters · ${state.reference.customerCount} in total`
         : `${result.total} customers, each with the search that brought them in.`;
@@ -830,7 +851,7 @@
             <span class="q-term ${hasQuery ? '' : 'q-term--none'}">${hasQuery ? `“${esc(row.keyword)}”` : 'Walk-in, referral or direct visit'}</span>
             <span class="q-meta">
               ${row.productName ? `<span class="pill pill--product">${esc(row.productName)}</span>` : ''}
-              ${hasQuery ? `<span class="src">${sourceText(row.termSource || row.source)}</span>` : ''}
+              ${hasQuery ? `<span class="src">${sourceText(row.source)}</span>` : ''}
             </span>
           </span>
           <span class="cust-foot">
@@ -1130,8 +1151,66 @@
       toast('That file is larger than 5 MB.', true);
       return;
     }
+    if (state.reference.dataMode !== 'real' && !window.confirm('This demo preview is not private. Upload only synthetic test data here. Continue?')) return;
     const text = await file.text();
     await importCsv(text, file.name);
+  }
+
+  function historyWindow() {
+    const from = $('#history-from').value;
+    const to = $('#history-to').value;
+    if (!from || !to || from > to) throw new Error('Choose a valid start and end date.');
+    return new URLSearchParams({ from, to });
+  }
+
+  async function loadHistory() {
+    const target = $('#history-summary');
+    try {
+      const result = await api(`/api/history?${historyWindow()}`);
+      const { totals, months } = result;
+      target.innerHTML = `<div class="history-totals">
+        <span><strong>${compact(totals.impressions)}</strong> impressions</span>
+        <span><strong>${compact(totals.clicks)}</strong> clicks</span>
+        <span><strong>${totals.customers}</strong> enquiries</span>
+        <span><strong>${totals.attributed}</strong> attributed</span>
+      </div>${months.length ? `<div class="table-wrap history-scroll"><table class="history-table">
+        <thead><tr><th>Month</th><th>Impressions</th><th>Clicks</th><th>Enquiries</th><th>Attributed</th><th>Won</th></tr></thead>
+        <tbody>${months.map((m) => `<tr><td>${esc(m.month)}</td><td>${compact(m.impressions)}</td><td>${compact(m.clicks)}</td><td>${m.customers}</td><td>${m.attributed}</td><td>${m.won}</td></tr>`).join('')}</tbody>
+      </table></div>` : '<p class="hint">No records within this window. Upload dated search reports and enquiry CSVs to see the history.</p>'}`;
+    } catch (error) {
+      target.textContent = error.message;
+    }
+  }
+
+  async function importReport() {
+    const box = $('#report-result');
+    box.hidden = false;
+    const file = $('#report-file').files[0];
+    if (!file) { box.className = 'import-result is-error'; box.textContent = 'Choose a CSV report first.'; return; }
+    if (file.size > 5 * 1024 * 1024) { box.className = 'import-result is-error'; box.textContent = 'File must be under 5 MB.'; return; }
+    try {
+      const params = historyWindow();
+      params.set('source', $('#report-source').value);
+      box.className = 'import-result is-warn';
+      box.textContent = `Importing ${file.name}…`;
+      const response = await fetch(`/api/import/search?${params}`, {
+        method: 'POST', headers: { 'Content-Type': 'text/csv' }, body: await file.text(),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'Import failed');
+      box.className = `import-result ${payload.skipped ? 'is-warn' : 'is-ok'}`;
+      box.innerHTML = `<strong>${payload.imported} dated rows imported or updated · ${payload.terms} queries</strong>
+        ${payload.outOfRange ? ` · ${payload.outOfRange} outside window` : ''}
+        ${payload.skipped ? ` · ${payload.skipped} invalid/anonymized rows skipped` : ''}
+        ${payload.details?.length ? `<ul>${payload.details.map((d) => `<li>Row ${d.row}: ${esc(d.reason)}</li>`).join('')}</ul>` : ''}`;
+      $('#report-file').value = '';
+      await Promise.all([loadReference(), loadOverview(), loadQueries()]);
+      toast(`${payload.imported} search rows imported`);
+    } catch (error) {
+      box.className = 'import-result is-error';
+      box.textContent = error.message;
+      toast(error.message, true);
+    }
   }
 
   async function importCsv(csv, name = 'CSV') {
@@ -1141,7 +1220,8 @@
     resultBox.textContent = `Importing ${name}…`;
 
     try {
-      const response = await fetch('/api/import', {
+      const params = state.reference.dataMode === 'real' ? `?${historyWindow()}` : '';
+      const response = await fetch(`/api/import${params}`, {
         method: 'POST',
         headers: { 'Content-Type': 'text/csv' },
         body: csv,
@@ -1179,16 +1259,19 @@
     if (f.productId) params.set('productId', f.productId);
     if (f.source) params.set('source', f.source);
     if (f.city) params.set('city', f.city);
+    if (f.from) params.set('from', f.from);
+    if (f.to) params.set('to', f.to);
     if (f.stages.length) params.set('stage', f.stages.join(','));
     return params.toString();
   }
 
   async function resetDemo() {
-    if (!window.confirm('Reset the demo database? This deletes every customer, import and note currently stored.')) return;
+    if (!window.confirm('DANGER: This permanently deletes ALL customer records, imported reports and notes, including REAL data. Regenerate demo data?')) return;
     try {
       await api('/api/demo/reset', { method: 'POST' });
-      state.customerFilters = { ...state.customerFilters, q: '', productId: '', source: '', city: '', stages: [], termId: '', page: 1 };
-      ['#c-search', '#c-product', '#c-source', '#c-city', '#global-search'].forEach((sel) => { $(sel).value = ''; });
+      state.customerFilters = { ...state.customerFilters, q: '', productId: '', source: '', city: '', from: '', to: '', stages: [], termId: '', page: 1 };
+      ['#c-search', '#c-product', '#c-source', '#c-city', '#c-from', '#c-to', '#global-search'].forEach((sel) => { $(sel).value = ''; });
+      state.historyDefaultApplied = false;
       await loadReference();
       await loadOverview();
       await loadCustomers();
@@ -1306,6 +1389,14 @@
       },
     );
 
+    ['from', 'to'].forEach((key) => {
+      $(`#c-${key}`).addEventListener('change', (event) => {
+        state.customerFilters[key] = event.target.value;
+        state.customerFilters.page = 1;
+        loadCustomers();
+      });
+    });
+
     // query filters
     $('#q-search').addEventListener(
       'input',
@@ -1363,6 +1454,19 @@
     $('#export-filtered').addEventListener('click', () => {
       const query = customerQueryString();
       window.location.href = `/api/export${query ? `?${query}` : ''}`;
+    });
+
+    // historical imports
+    ['#history-from', '#history-to'].forEach((sel) => $(sel).addEventListener('change', loadHistory));
+    $('#import-report').addEventListener('click', importReport);
+    $('#replace-demo').addEventListener('click', async () => {
+      if (!window.confirm('Permanently delete ALL demo enquiries and search totals? Do this only on a private server configured with MOVIEJUKE_ADMIN_PASSWORD.')) return;
+      try {
+        await api('/api/demo/replace', { method: 'POST', body: JSON.stringify({ confirm: 'REPLACE DEMO DATA' }) });
+        await Promise.all([loadReference(), loadOverview(), loadQueries()]);
+        if (state.view === 'customers') await loadCustomers();
+        toast('Demo removed. Upload your historical exports.');
+      } catch (error) { toast(error.message, true); }
     });
 
     // import

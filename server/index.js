@@ -1,8 +1,10 @@
 'use strict';
 
 const path = require('node:path');
+const crypto = require('node:crypto');
 const express = require('express');
-const { connect, ensureData, resetData, DB_PATH } = require('./db');
+const { connect, ensureData, resetData, replaceDemo, DB_PATH } = require('./db');
+const { importSearchReport, dayFrom, START, END } = require('./search-import');
 const q = require('./queries');
 const { parseCsv, toObjects, toCsv } = require('./csv');
 
@@ -11,6 +13,23 @@ const PORT = Number(process.env.PORT) || 4300;
 const HOST = process.env.HOST || '0.0.0.0';
 
 app.disable('x-powered-by');
+// A live preview is publicly reachable. Never expose private enquiries there:
+// real mode requires an explicit password and protects HTML, assets and APIs.
+app.use((req, res, next) => {
+  const mode = connect().prepare("SELECT value FROM meta WHERE key = 'data_mode'").get()?.value;
+  if (mode !== 'real') return next();
+  const secret = process.env.MOVIEJUKE_ADMIN_PASSWORD;
+  if (!secret) return res.status(503).send('Real data is unavailable until MOVIEJUKE_ADMIN_PASSWORD is configured.');
+  const header = req.get('authorization') || '';
+  const expected = `Basic ${Buffer.from(`admin:${secret}`).toString('base64')}`;
+  const a = crypto.createHash('sha256').update(header).digest();
+  const b = crypto.createHash('sha256').update(expected).digest();
+  if (!crypto.timingSafeEqual(a, b)) {
+    res.setHeader('WWW-Authenticate', 'Basic realm="Moviejuke private workspace", charset="UTF-8"');
+    return res.status(401).send('Authentication required.');
+  }
+  next();
+});
 app.use(express.json({ limit: '8mb' }));
 app.use(express.text({ type: ['text/csv', 'text/plain'], limit: '8mb' }));
 app.use(express.static(path.join(__dirname, '..', 'public'), { extensions: ['html'] }));
@@ -176,17 +195,13 @@ function normalizeSource(raw, hasKeyword) {
 }
 
 function normalizeDate(raw) {
-  if (!raw) return new Date().toISOString();
-  const trimmed = String(raw).trim();
-  const parsed = new Date(trimmed);
-  if (!Number.isNaN(parsed.getTime())) return parsed.toISOString();
-  const dmy = trimmed.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
-  if (dmy) {
-    const [, day, month, year] = dmy;
-    const fallback = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day), 12));
-    if (!Number.isNaN(fallback.getTime())) return fallback.toISOString();
+  const text = String(raw || '').trim();
+  if (/^\d{4}-\d{2}-\d{2}[T ]/.test(text)) {
+    const parsed = new Date(text);
+    return !Number.isNaN(parsed.getTime()) ? parsed.toISOString() : null;
   }
-  return new Date().toISOString();
+  const day = dayFrom(text);
+  return day ? `${day}T12:00:00.000Z` : null;
 }
 
 function normalizeNumber(raw) {
@@ -196,7 +211,10 @@ function normalizeNumber(raw) {
   return Number.isFinite(value) ? Math.round(value) : 0;
 }
 
-function runImport(csvText) {
+function runImport(csvText, { from = '', to = '' } = {}) {
+  if ((from && !dayFrom(from)) || (to && !dayFrom(to)) || (from && to && from > to)) {
+    throw Object.assign(new Error('Choose a valid start and end date.'), { status: 400 });
+  }
   const { headers, records } = toObjects(parseCsv(csvText));
   if (!headers.length) throw Object.assign(new Error('The file appears to be empty.'), { status: 400 });
   if (!records.length) throw Object.assign(new Error('No data rows found below the header.'), { status: 400 });
@@ -241,6 +259,23 @@ function runImport(csvText) {
 
     const keyword = String(valueFor(record, 'keyword') || '').trim().toLowerCase();
     const source = normalizeSource(valueFor(record, 'source'), Boolean(keyword));
+    const rawDate = valueFor(record, 'createdAt');
+    const createdAt = rawDate ? normalizeDate(rawDate) : (from || to ? null : new Date().toISOString());
+    if (!createdAt) {
+      skipped.push({ row: index + 2, reason: 'Missing or invalid enquiry date' });
+      continue;
+    }
+    if ((from && createdAt.slice(0, 10) < from) || (to && createdAt.slice(0, 10) > to)) {
+      skipped.push({ row: index + 2, reason: 'Outside selected date range' });
+      continue;
+    }
+    const fingerprint = crypto.createHash('sha256').update(JSON.stringify(
+      Object.entries(record).sort(([a], [b]) => a.localeCompare(b))
+    )).digest('hex');
+    if (connect().prepare('SELECT 1 FROM customer_imports WHERE fingerprint = ?').get(fingerprint)) {
+      skipped.push({ row: index + 2, reason: 'Already imported' });
+      continue;
+    }
 
     try {
       const customer = q.createCustomer({
@@ -256,7 +291,7 @@ function runImport(csvText) {
         quoteValue: normalizeNumber(valueFor(record, 'quoteValue')),
         owner: valueFor(record, 'owner'),
         notes: valueFor(record, 'notes'),
-        createdAt: normalizeDate(valueFor(record, 'createdAt')),
+        createdAt,
         landingPage: valueFor(record, 'landingPage'),
         gclid: valueFor(record, 'gclid'),
         device: valueFor(record, 'device') || 'mobile',
@@ -275,6 +310,7 @@ function runImport(csvText) {
           )
           .run(impressions, clicks, position, position, customer.termId);
       }
+      connect().prepare('INSERT INTO customer_imports (fingerprint, customer_id) VALUES (?, ?)').run(fingerprint, customer.id);
       imported.push(customer);
     } catch (error) {
       skipped.push({ row: index + 2, reason: error.message });
@@ -296,7 +332,7 @@ app.post('/api/import', (req, res) => {
   if (!csvText.trim()) {
     return res.status(400).json({ error: 'Send the CSV as text/csv, text/plain, or JSON { "csv": "..." }.' });
   }
-  res.json(runImport(csvText));
+  res.json(runImport(csvText, { from: req.query.from || '', to: req.query.to || '' }));
 });
 
 app.get('/api/import/template', (req, res) => {
@@ -387,6 +423,66 @@ app.get('/api/export', (req, res) => {
   res.type('text/csv');
   res.setHeader('Content-Disposition', 'attachment; filename="moviejuke-customers.csv"');
   res.send(toCsv(headers, mapped, headers));
+});
+
+// Calendar-month history over the selected export window. Query stats only
+// come from uploaded dated observations; they are never extrapolated.
+app.get('/api/history', (req, res) => {
+  const from = String(req.query.from || START);
+  const to = String(req.query.to || END);
+  if (!dayFrom(from) || !dayFrom(to) || from > to || from.length !== 10 || to.length !== 10) {
+    return res.status(400).json({ error: 'Choose a valid start and end date.' });
+  }
+  const d = connect();
+  const leads = d.prepare(`SELECT substr(created_at, 1, 7) AS month, COUNT(*) AS customers,
+    SUM(CASE WHEN search_term_id IS NOT NULL THEN 1 ELSE 0 END) AS attributed,
+    SUM(CASE WHEN stage = 'won' THEN 1 ELSE 0 END) AS won
+    FROM customers WHERE substr(created_at, 1, 10) BETWEEN ? AND ? GROUP BY month`).all(from, to);
+  const queries = d.prepare(`SELECT substr(day, 1, 7) AS month, SUM(impressions) AS impressions,
+    SUM(clicks) AS clicks, COUNT(*) AS reportRows
+    FROM search_observations WHERE day BETWEEN ? AND ? GROUP BY month`).all(from, to);
+  const byMonth = new Map();
+  for (const r of leads) byMonth.set(r.month, { month: r.month, customers: r.customers, attributed: r.attributed, won: r.won, impressions: 0, clicks: 0, reportRows: 0 });
+  for (const r of queries) {
+    const m = byMonth.get(r.month) || { month: r.month, customers: 0, attributed: 0, won: 0, impressions: 0, clicks: 0, reportRows: 0 };
+    Object.assign(m, { impressions: r.impressions, clicks: r.clicks, reportRows: r.reportRows });
+    byMonth.set(r.month, m);
+  }
+  const months = [...byMonth.values()].sort((a, b) => b.month.localeCompare(a.month));
+  const totals = months.reduce((acc, m) => {
+    for (const key of ['customers', 'attributed', 'won', 'impressions', 'clicks', 'reportRows']) acc[key] += m[key];
+    return acc;
+  }, { customers: 0, attributed: 0, won: 0, impressions: 0, clicks: 0, reportRows: 0 });
+  res.json({ range: { from, to }, totals, months });
+});
+
+// ---------- historical search reports & real-data transition ----------
+
+app.post('/api/import/search', (req, res) => {
+  const csvText = typeof req.body === 'string' ? req.body : req.body?.csv;
+  if (!csvText?.trim()) return res.status(400).json({ error: 'Send a dated search report as CSV.' });
+  res.json(importSearchReport(csvText, {
+    from: req.query.from || START,
+    to: req.query.to || END,
+    source: req.query.source || 'google_organic',
+  }));
+});
+
+app.get('/api/import/search/template', (req, res) => {
+  res.type('text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename="search-report-template.csv"');
+  res.send('date,query,impressions,clicks,position,source,landing_page\n2023-01-01,blackout curtains bangalore,125,8,3.2,google_organic,/collections/blackout-curtains\n');
+});
+
+app.post('/api/demo/replace', (req, res) => {
+  if (req.body?.confirm !== 'REPLACE DEMO DATA') {
+    return res.status(400).json({ error: 'Explicit confirmation is required to replace the demo dataset.' });
+  }
+  if (!process.env.MOVIEJUKE_ADMIN_PASSWORD || process.env.MOVIEJUKE_ADMIN_PASSWORD.length < 16) {
+    return res.status(403).json({ error: 'Set MOVIEJUKE_ADMIN_PASSWORD (16+ characters) on a private deployment before importing real customer data. This shared preview is not suitable for private records.' });
+  }
+  replaceDemo();
+  res.json({ ok: true, message: 'Demo customers and search totals removed. Product catalogue retained; ready for real CSV exports.' });
 });
 
 // ---------- demo data controls ----------

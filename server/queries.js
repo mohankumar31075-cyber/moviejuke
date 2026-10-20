@@ -89,6 +89,8 @@ function getFilterOptions() {
     ),
   }));
   const meta = d.prepare("SELECT value FROM meta WHERE key = 'seeded_at'").get();
+  const mode = d.prepare("SELECT value FROM meta WHERE key = 'data_mode'").get();
+  const coverage = d.prepare('SELECT COUNT(*) AS rows, MIN(day) AS first, MAX(day) AS last FROM search_observations').get();
   return {
     products,
     cities,
@@ -97,6 +99,8 @@ function getFilterOptions() {
     termCount: Number(d.prepare('SELECT COUNT(*) AS n FROM search_terms').get().n),
     customerCount: Number(d.prepare('SELECT COUNT(*) AS n FROM customers').get().n),
     seededAt: meta ? meta.value : null,
+    dataMode: mode?.value || 'demo',
+    searchCoverage: { rows: coverage.rows, first: coverage.first, last: coverage.last },
   };
 }
 
@@ -138,7 +142,7 @@ function buildCustomerWhere(filters) {
     params.push(filters.from);
   }
   if (filters.to) {
-    clauses.push('c.created_at <= ?');
+    clauses.push("c.created_at < date(?, '+1 day')");
     params.push(filters.to);
   }
   if (filters.minBudget) {
@@ -342,6 +346,8 @@ function updateCustomer(id, patch) {
 function listSearchTerms(filters = {}) {
   const clauses = [];
   const params = [];
+  const sourceParams = filters.source ? Array(6).fill(filters.source) : [];
+  const leadSource = filters.source ? ' AND c.source = ?' : '';
   if (filters.q) {
     clauses.push('(LOWER(s.keyword) LIKE ? OR LOWER(COALESCE(p.name, \'\')) LIKE ?)');
     const like = `%${filters.q.toLowerCase()}%`;
@@ -352,25 +358,31 @@ function listSearchTerms(filters = {}) {
     params.push(Number(filters.productId));
   }
   if (filters.source) {
-    clauses.push('s.source = ?');
+    clauses.push('(obs.term_id IS NOT NULL OR (s.source = ? AND NOT EXISTS (SELECT 1 FROM search_observations x WHERE x.term_id=s.id)))');
     params.push(filters.source);
   }
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
 
   const rows = db()
     .prepare(
-      `SELECT s.id, s.keyword, s.source, s.impressions, s.clicks, s.position,
+      `SELECT s.id, s.keyword, ${filters.source ? '? AS source' : 's.source'},
+              CASE WHEN EXISTS(SELECT 1 FROM search_observations x WHERE x.term_id=s.id) THEN COALESCE(obs.impressions,0) ELSE s.impressions END AS impressions,
+              CASE WHEN EXISTS(SELECT 1 FROM search_observations x WHERE x.term_id=s.id) THEN COALESCE(obs.clicks,0) ELSE s.clicks END AS clicks,
+              CASE WHEN EXISTS(SELECT 1 FROM search_observations x WHERE x.term_id=s.id) THEN COALESCE(obs.position,0) ELSE s.position END AS position,
               s.landing_page AS landingPage, s.first_seen AS firstSeen, s.last_seen AS lastSeen,
               p.id AS productId, p.name AS productName, p.category AS productCategory,
-              (SELECT COUNT(*) FROM customers c WHERE c.search_term_id = s.id) AS leads,
-              (SELECT COUNT(*) FROM customers c WHERE c.search_term_id = s.id AND c.stage IN ('qualified','quoted','won')) AS qualified,
-              (SELECT COALESCE(SUM(c.quote_value), 0) FROM customers c WHERE c.search_term_id = s.id AND c.stage IN ('quoted','won')) AS pipeline,
-              (SELECT COALESCE(SUM(c.quote_value), 0) FROM customers c WHERE c.search_term_id = s.id AND c.stage = 'won') AS revenue
+              (SELECT COUNT(*) FROM customers c WHERE c.search_term_id = s.id${leadSource}) AS leads,
+              (SELECT COUNT(*) FROM customers c WHERE c.search_term_id = s.id AND c.stage IN ('qualified','quoted','won')${leadSource}) AS qualified,
+              (SELECT COALESCE(SUM(c.quote_value), 0) FROM customers c WHERE c.search_term_id = s.id AND c.stage IN ('quoted','won')${leadSource}) AS pipeline,
+              (SELECT COALESCE(SUM(c.quote_value), 0) FROM customers c WHERE c.search_term_id = s.id AND c.stage = 'won'${leadSource}) AS revenue
        FROM search_terms s
        LEFT JOIN products p ON p.id = s.product_id
+       LEFT JOIN (SELECT term_id, SUM(impressions) AS impressions, SUM(clicks) AS clicks,
+          COALESCE(SUM(position * impressions) / NULLIF(SUM(CASE WHEN position > 0 THEN impressions ELSE 0 END),0),0) AS position
+          FROM search_observations ${filters.source ? 'WHERE source = ?' : ''} GROUP BY term_id) obs ON obs.term_id=s.id
        ${where}`,
     )
-    .all(...params)
+    .all(...sourceParams, ...params)
     .map((row) => {
       const clicks = Number(row.clicks);
       const leads = Number(row.leads);

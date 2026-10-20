@@ -95,6 +95,42 @@ The database file is gitignored — a fresh clone reseeds itself. Use **Reset de
 
 ---
 
+## Importing the requested historical records (2023-01-01 to 2026-10-20)
+
+**No real exports are included in this repository.** The initial 248 enquiries and 40 queries
+are fictional. January 1, 2023 through October 20, 2026 is **3 years, 9 months and 20 days**, not
+two years; the import form defaults to the requested dates.
+
+1. Export a **dated** query report from Google Ads or Search Console. Required CSV headers:
+   `date,query,impressions,clicks`. `search_term`, `top_queries`, `impr`, `position`,
+   `landing_page`, `source` are also recognized. Include the **date + query** dimensions; an
+   undated aggregate cannot be reliably assigned to calendar months. Select Ads or Search Console
+   in the form if the CSV has no source column. For large exports, split into files under 5 MB;
+   re-uploading a day/query/source/page updates it rather than summing the same report twice.
+2. Export your **own first-party enquiries / CRM** separately: `name,created_at,email,phone,
+   product,keyword,source,stage` (other fields optional). `created_at` is required when using the
+   historical range, and rows outside it are skipped. Re-uploading **identical CSV rows** skips
+   them; a modified row is considered a new lead. Export personal data only with appropriate
+   permission and retention policies.
+3. Deploy behind **HTTPS on a private server**. Set a strong `MOVIEJUKE_ADMIN_PASSWORD` (at least
+   16 characters) via the server's environment/secrets manager. It enables password protection
+   for every page and API in real-data mode (HTTP Basic Auth, username `admin`). **Do not upload
+   personal information to the publicly reachable Arena demo preview.** Never commit credentials
+   or your SQLite database. For a production system, add stronger authentication, authorization,
+   rate limiting and a separate public lead-capture endpoint.
+4. In **Import & export**, click **Replace demo with real data** after backing up anything important.
+   This action is intentionally blocked without the password above. It removes fictional people,
+   query totals and notes while retaining the product catalogue. Import the search reports and CRM
+   exports. The **Monthly history** table shows actual dated clicks/impressions and enquiries for
+   the chosen window; missing months remain missing. Existing overview quick charts show only
+   the most recent 7/30/90 days, while totals and searches show all available imported history.
+
+Search reports are aggregates: Google never identifies individual searchers, anonymized/"other"
+queries cannot be linked to people, and Google may not supply older reports that were never
+archived. If an older export does not exist, this app **cannot recover or invent** that data.
+
+---
+
 ## CSV format
 
 Only `name` is required. Everything else is optional and matched by common aliases.
@@ -125,6 +161,9 @@ server/
   queries.js   all SQL reads/writes and the overview aggregation
   db.js        node:sqlite connection, schema, auto-seed
   csv.js       dependency-free RFC-4180 parser/writer
+  search-import.js  dated query report parser and idempotent importer
+tests/
+  historical.test.js  isolated import and authorization regression test
 public/
   index.html   dashboard shell
   app.js       view rendering, chart, drawer, filters, import
@@ -143,9 +182,12 @@ public/
 | `POST` | `/api/customers` | create a customer (used by the capture page) |
 | `PATCH` | `/api/customers/:id` | move stage, edit contact/commercial fields |
 | `POST` | `/api/customers/:id/events` | log a call, note or WhatsApp touch |
-| `POST` | `/api/import` | import CSV (text body or `{ "csv": "…" }`) |
+| `POST` | `/api/import?from=2023-01-01&to=2026-10-20` | import CRM CSV with date filter (text body or `{ "csv": "…" }`) |
+| `POST` | `/api/import/search?from=…&to=…&source=google_ads` | import dated query CSV; upsert matching observations |
+| `GET` | `/api/history?from=…&to=…` | monthly dated report and customer totals |
+| `POST` | `/api/demo/replace` | remove fictional records (requires admin password) |
 | `GET` | `/api/export` | CSV export honouring the customer filters |
-| `GET` | `/api/import/template` | sample CSV |
+| `GET` | `/api/import/template` and `/api/import/search/template` | sample CSVs |
 | `POST` | `/api/demo/reset` | wipe and reseed the demo data |
 
 ---
@@ -161,4 +203,4 @@ public/
 3. **Keep the join.** Always write the query onto the customer at the moment of enquiry. Retrofitting
    attribution later is the one thing that cannot be recovered.
 
-The seeded dataset is clearly labelled demo data; replace it with your own by resetting and importing.
+The seeded dataset is labelled demo data. **Do not use Reset demo data to import real records** — it wipes all records and creates fictional ones. Follow the protected **Replace demo with real data** flow above instead.

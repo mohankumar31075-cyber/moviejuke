@@ -6,9 +6,6 @@
 <title>Moviejuke Interiors · Search Intelligence</title>
 <meta name="description" content="See which Google searches bring in curtains, blinds and interior design customers — and exactly who those customers are." />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231F4D46'/%3E%3Cpath d='M8 8h3v16H8zM21 8h3v16h-3zM8 14h16v3H8z' fill='%23E9D9BE'/%3E%3C/svg%3E" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;450;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
@@ -78,8 +75,8 @@
 
     <div class="sidebar-foot">
       <div class="demo-note">
-        <strong>Demo workspace</strong>
-        <p>248 seeded enquiries across 40 Google searches. Reset any time.</p>
+        <strong id="workspace-label">Demo workspace</strong>
+        <p id="workspace-note">248 seeded enquiries across 40 Google searches. Reset any time.</p>
         <button class="btn btn--ghost btn--sm" id="reset-demo-side">
           <svg class="icon icon--tiny"><use href="#i-refresh"/></svg> Reset data
         </button>
@@ -167,7 +164,7 @@
               <h2>Top performing searches</h2>
               <p class="card-sub">Google queries ranked by the customers they produced</p>
             </div>
-            <a class="btn btn--ghost btn--sm" href="#/queries">All 40 searches <svg class="icon icon--tiny"><use href="#i-chevron-right"/></svg></a>
+            <a class="btn btn--ghost btn--sm" href="#/queries">All searches <svg class="icon icon--tiny"><use href="#i-chevron-right"/></svg></a>
           </div>
           <div class="table-wrap" id="term-table"></div>
         </article>
@@ -201,7 +198,7 @@
           <div>
             <p class="eyebrow">Acquisition</p>
             <h1>Google searches</h1>
-            <p class="page-sub">Live queries that brought customers to Moviejuke, with the customers each one produced.</p>
+            <p class="page-sub">Search reports show aggregate queries. Named customers appear only when they have submitted an enquiry.</p>
           </div>
         </div>
 
@@ -289,6 +286,11 @@
           </label>
         </div>
 
+        <div class="customer-dates" role="group" aria-label="Filter enquiries by date">
+          <span>Enquiry date</span>
+          <label>From <input id="c-from" type="date" /></label>
+          <label>To <input id="c-to" type="date" /></label>
+        </div>
         <div class="stage-chips" id="stage-chips" role="group" aria-label="Filter by stage"></div>
         <div class="active-filters" id="active-chips"></div>
 
@@ -306,12 +308,57 @@
           </div>
         </div>
 
+        <article class="card history-card">
+          <div class="card-head">
+            <div>
+              <h2>Historical data · 2023–2026</h2>
+              <p class="card-sub">Choose the window for your CSV exports. No Google account is connected; upload your own reports and CRM enquiries below.</p>
+            </div>
+          </div>
+          <div class="history-fields">
+            <label class="form-field"><span>From</span><input type="date" id="history-from" value="2023-01-01" /></label>
+            <label class="form-field"><span>Through</span><input type="date" id="history-to" value="2026-10-20" /></label>
+          </div>
+          <p class="hint" id="history-status">Checking data source…</p>
+          <div id="replace-panel" hidden>
+            <p class="hint"><strong>Demo records are still showing.</strong> Replace them before importing real reports so the counts do not mix. Your product catalogue will be kept. This permanently deletes demo customers, search totals and notes.</p>
+            <button class="btn btn--danger" id="replace-demo">Replace demo with real data</button>
+          </div>
+        </article>
+
+        <article class="card history-card">
+          <div class="card-head">
+            <div>
+              <h2>Monthly history</h2>
+              <p class="card-sub">Only records with dates inside the selected window. Missing months are not estimated.</p>
+            </div>
+          </div>
+          <div id="history-summary" aria-live="polite">Waiting for data…</div>
+        </article>
+
         <div class="grid grid--two">
+          <div class="stack">
+          <article class="card">
+            <div class="card-head">
+              <div>
+                <h2>Import search report</h2>
+                <p class="card-sub">Dated Google Ads or Search Console CSV · re-uploading the same report updates matching days</p>
+              </div>
+              <a class="link" href="/api/import/search/template" download>Template</a>
+            </div>
+            <p class="hint">Required: <code>date</code>, <code>query</code> (or search term), <code>impressions</code>, <code>clicks</code>. Optional: position, landing page and source. Aggregate/anonymized query rows are excluded.</p>
+            <div class="history-fields">
+              <label class="form-field"><span>Report source</span><select id="report-source"><option value="google_organic">Search Console (organic)</option><option value="google_ads">Google Ads (paid)</option></select></label>
+              <label class="form-field"><span>CSV file</span><input id="report-file" type="file" accept=".csv,text/csv" /></label>
+            </div>
+            <button class="btn btn--primary" id="import-report">Import dated searches</button>
+            <div class="import-result" id="report-result" hidden></div>
+          </article>
           <article class="card">
             <div class="card-head">
               <div>
                 <h2>Import customers</h2>
-                <p class="card-sub">CSV up to 5 MB · new rows are added, nothing is overwritten</p>
+                <p class="card-sub">CSV up to 5 MB · identical rows are skipped on re-upload</p>
               </div>
               <a class="link" href="/api/import/template" download>
                 <svg class="icon icon--tiny"><use href="#i-download"/></svg> Template
@@ -342,6 +389,7 @@
               </div>
             </details>
           </article>
+          </div>
 
           <div class="stack">
             <article class="card">
@@ -366,10 +414,10 @@
               <div class="card-head">
                 <div>
                   <h2>Demo data</h2>
-                  <p class="card-sub">Regenerate a clean dataset</p>
+                  <p class="card-sub">Regenerate a clean demo dataset</p>
                 </div>
               </div>
-              <p class="hint">This wipes the local database and reseeds 248 enquiries across 40 Google searches. Useful when you have been testing imports.</p>
+              <p class="hint">This permanently deletes ALL records (including imported real data) and reseeds 248 demo enquiries. Do not use after importing your real exports.</p>
               <button class="btn btn--danger" id="reset-demo">
                 <svg class="icon icon--tiny"><use href="#i-refresh"/></svg> Reset demo data
               </button>

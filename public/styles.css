@@ -1345,3 +1345,23 @@ tr:hover .term-main .icon--tiny { opacity: 1; }
     transition-duration: 0.001ms !important;
   }
 }
+
+/* Historical import controls */
+.history-card { margin-bottom: 16px; }
+.history-fields { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 14px 0; }
+.history-fields .form-field { flex: 1 1 160px; min-width: 0; }
+.history-fields input, .history-fields select { width: 100%; min-width: 0; }
+.history-card #replace-panel { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 12px; }
+.history-card #replace-panel .hint { margin: 0 0 12px; }
+#report-result { overflow-wrap: anywhere; }
+.history-totals { display: flex; gap: 10px 26px; flex-wrap: wrap; color: var(--muted); font-size: 12px; margin: 10px 0 16px; }
+.history-totals strong { color: var(--ink); font-size: 18px; font-weight: 600; margin-right: 4px; font-variant-numeric: tabular-nums; }
+.history-scroll { max-height: 310px; overflow: auto; }
+.history-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: right; white-space: nowrap; }
+.history-table th, .history-table td { padding: 9px 12px; border-bottom: 1px solid var(--line); }
+.history-table th { position: sticky; top: 0; background: var(--card); color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
+.history-table th:first-child, .history-table td:first-child { text-align: left; }
+.customer-dates { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; color: var(--muted); font-size: 11px; margin: 1px 0 14px; }
+.customer-dates > span { font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.customer-dates label { display: inline-flex; align-items: center; gap: 6px; }
+.customer-dates input { max-width: 150px; padding: 5px 8px; background: var(--card); color: var(--ink-soft); border: 1px solid var(--line); border-radius: 7px; font: inherit; }
