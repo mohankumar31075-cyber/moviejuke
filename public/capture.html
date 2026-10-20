@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Book a free design visit · Moviejuke Interiors</title>
+<meta name="description" content="Tell us what you're looking for and book a free measurement visit with Moviejuke Interiors, Bengaluru." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231F4D46'/%3E%3Cpath d='M8 8h3v16H8zM21 8h3v16h-3zM8 14h16v3H8z' fill='%23E9D9BE'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;450;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/styles.css" />
+<style>
+  body { background: var(--paper); }
+
+  .capture-shell {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  /* ---------- editorial panel ---------- */
+  .capture-aside {
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(110% 70% at 10% 0%, #24514a 0%, transparent 60%),
+      radial-gradient(90% 60% at 100% 100%, #2c5c52 0%, transparent 65%),
+      #16332e;
+    color: #f1ece0;
+    padding: 46px 52px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 100vh;
+  }
+  .capture-aside::before {
+    content: "";
+    position: absolute;
+    top: -40px;
+    right: -80px;
+    width: 420px;
+    height: 640px;
+    background: repeating-linear-gradient(
+      92deg,
+      rgba(233, 217, 190, 0.14) 0px,
+      rgba(233, 217, 190, 0.14) 26px,
+      rgba(233, 217, 190, 0.03) 26px,
+      rgba(233, 217, 190, 0.03) 58px
+    );
+    border-radius: 46% 54% 20% 80% / 8% 8% 92% 92%;
+    transform: rotate(-4deg);
+    pointer-events: none;
+    mask-image: linear-gradient(180deg, #000 60%, transparent 100%);
+    -webkit-mask-image: linear-gradient(180deg, #000 60%, transparent 100%);
+  }
+  .capture-aside::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #d9bd8d, #b9763a 40%, transparent);
+  }
+  .cap-brand { display: flex; align-items: center; gap: 11px; position: relative; z-index: 1; }
+  .cap-brand .brand-mark { width: 42px; height: 42px; border-radius: 12px; }
+  .cap-brand strong {
+    font-family: var(--font-display);
+    font-size: 21px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    display: block;
+    line-height: 1.1;
+  }
+  .cap-brand small {
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #9fbdb5;
+    display: block;
+    margin-top: 3px;
+  }
+
+  .cap-copy { position: relative; z-index: 1; max-width: 470px; }
+  .cap-eyebrow {
+    font-size: 10.5px;
+    letter-spacing: 0.17em;
+    text-transform: uppercase;
+    color: #d9bd8d;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+  .cap-copy h1 {
+    font-family: var(--font-display);
+    font-size: clamp(30px, 3.4vw, 46px);
+    line-height: 1.12;
+    font-weight: 400;
+    letter-spacing: -0.022em;
+    color: #f7f2e6;
+  }
+  .cap-copy h1 em { font-style: italic; color: #e2c79b; }
+  .cap-copy > p {
+    margin-top: 16px;
+    font-size: 14px;
+    line-height: 1.65;
+    color: #b8cdc7;
+    max-width: 42ch;
+  }
+  .cap-points { margin-top: 34px; display: flex; flex-direction: column; gap: 15px; }
+  .cap-point { display: flex; gap: 12px; align-items: flex-start; }
+  .cap-point-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    display: grid;
+    place-items: center;
+    background: rgba(233, 217, 190, 0.11);
+    border: 1px solid rgba(233, 217, 190, 0.18);
+    color: #e2c79b;
+    flex: none;
+  }
+  .cap-point strong { display: block; font-size: 13px; font-weight: 600; color: #f1ece0; }
+  .cap-point span { display: block; font-size: 12px; color: #9fbdb5; margin-top: 1px; }
+
+  .cap-aside-foot { position: relative; z-index: 1; display: flex; align-items: center; gap: 14px; }
+  .cap-quote { font-size: 12.5px; line-height: 1.55; color: #c2d4cf; max-width: 34ch; }
+  .cap-quote strong { color: #f1ece0; font-weight: 500; }
+  .cap-stars { color: #e2c79b; letter-spacing: 2px; font-size: 11px; margin-bottom: 4px; }
+
+  /* ---------- form panel ---------- */
+  .capture-main {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 44px 32px;
+    min-height: 100vh;
+  }
+  .capture-card {
+    width: min(520px, 100%);
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    box-shadow: 0 30px 70px -50px rgba(22, 33, 31, 0.55);
+    padding: 30px 30px 26px;
+    position: relative;
+  }
+  .capture-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    border-radius: 20px 20px 0 0;
+    background: linear-gradient(90deg, #1d4a43, #b9763a);
+  }
+  .capture-card h2 {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 500;
+    letter-spacing: -0.018em;
+  }
+  .capture-card .lede { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+
+  .intent-chip {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    margin: 16px 0 4px;
+    background: #f8f4ea;
+    border: 1px solid #ece2ce;
+    border-radius: 11px;
+    padding: 10px 12px;
+    font-size: 11.8px;
+    color: #6f5c33;
+    line-height: 1.45;
+  }
+  .intent-chip .icon { color: var(--accent); flex: none; margin-top: 1px; }
+  .intent-chip strong { font-weight: 600; color: #4f421f; }
+  .intent-chip[hidden] { display: none; }
+
+  .capture-form { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+  .capture-form .form-field > span { font-size: 10.5px; }
+  .capture-form .form-field input,
+  .capture-form .form-field select,
+  .capture-form .form-field textarea { padding: 10px 12px; font-size: 13.5px; }
+  .req { color: var(--accent); }
+  .field-note { font-size: 10.5px; color: var(--muted-2); margin-top: 2px; }
+
+  .capture-submit {
+    margin-top: 4px;
+    width: 100%;
+    justify-content: center;
+    padding: 12px 16px;
+    font-size: 13.5px;
+    font-weight: 600;
+    border-radius: 10px;
+  }
+  .capture-submit[disabled] { opacity: 0.65; cursor: wait; }
+
+  .capture-foot {
+    margin-top: 14px;
+    font-size: 10.8px;
+    color: var(--muted-2);
+    text-align: center;
+    line-height: 1.5;
+  }
+  .capture-error {
+    background: var(--lost-bg);
+    border: 1px solid #ecd6d1;
+    color: var(--lost);
+    border-radius: 9px;
+    padding: 9px 11px;
+    font-size: 12px;
+  }
+
+  /* success */
+  .capture-success { text-align: center; padding: 14px 6px 6px; }
+  .success-mark {
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    display: grid;
+    place-items: center;
+    background: var(--won-bg);
+    border: 1px solid #cfe4d8;
+    color: var(--won);
+  }
+  .success-mark svg { width: 28px; height: 28px; stroke-width: 2; }
+  .capture-success h2 { font-size: 26px; }
+  .capture-success p { font-size: 13px; color: var(--muted); margin-top: 8px; line-height: 1.6; }
+  .success-ref {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 18px;
+    background: #f7f4ec;
+    border: 1px dashed #ddd5c3;
+    border-radius: 10px;
+    padding: 9px 14px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+  .success-ref strong { letter-spacing: 0.02em; color: var(--brand); }
+  .success-actions { margin-top: 22px; display: flex; gap: 9px; justify-content: center; flex-wrap: wrap; }
+
+  @media (max-width: 980px) {
+    .capture-shell { grid-template-columns: 1fr; }
+    .capture-aside { min-height: auto; padding: 34px 26px 30px; }
+    .cap-points, .cap-aside-foot { display: none; }
+    .cap-copy h1 { font-size: 30px; }
+    .cap-copy > p { margin-top: 10px; }
+    .capture-main { padding: 26px 18px 46px; min-height: auto; }
+  }
+  @media (max-width: 560px) {
+    .capture-card { padding: 24px 20px 20px; }
+    .capture-aside { padding: 26px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<svg class="icon-sprite" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.4-3.4"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.6"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16.5 4.6a3.6 3.6 0 0 1 0 6.9"/><path d="M18 14.3c2.1.6 3.5 2.3 3.5 4.7"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v12"/><path d="m7 11 5 5 5-5"/><path d="M4 19h16"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><path d="M6.2 3h3l1.6 4.2-2 1.4a12 12 0 0 0 6.6 6.6l1.4-2L21 14.8v3a2.2 2.2 0 0 1-2.4 2.2C10.7 19.2 4.8 13.3 4 5.4A2.2 2.2 0 0 1 6.2 3Z"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m3.6 7 8.4 6 8.4-6"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.6"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M18 14v4a2.5 2.5 0 0 1-2.5 2.5H6A2.5 2.5 0 0 1 3.5 18V8.5A2.5 2.5 0 0 1 6 6h4"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.6 6.3"/><path d="M20 5v6h-6"/></symbol>
+    <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m14.5 5-7 7 7 7"/></symbol>
+    <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9.5 5 7 7-7 7"/></symbol>
+    <symbol id="i-arrow-up-right" viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m4.5 12.5 5 5 10-11"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+    <symbol id="i-trend" viewBox="0 0 24 24"><path d="m3 16 5.5-6 4 3.5L20 6"/><path d="M15 6h5v5"/></symbol>
+    <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3.5 13.9 9l5.6 2-5.6 2L12 18.5 10.1 13 4.5 11l5.6-2L12 3.5Z"/><path d="M19 16.5 19.8 19l2.2.8-2.2.8L19 23l-.8-2.4-2.2-.8 2.2-.8.8-2.5Z"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  </defs>
+</svg>
+
+<div class="capture-shell">
+  <aside class="capture-aside">
+    <div class="cap-brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32"><path d="M7 6h3.4v20H7zM21.6 6H25v20h-3.4zM7 13.4h18v3.2H7z" fill="currentColor"/></svg>
+      </span>
+      <span>
+        <strong>Moviejuke</strong>
+        <small>Curtains · Blinds · Interiors</small>
+      </span>
+    </div>
+
+    <div class="cap-copy">
+      <p class="cap-eyebrow">Bengaluru · Since 2011</p>
+      <h1>Your windows,<br />measured and <em>dressed</em> properly.</h1>
+      <p>Tell us what you searched for and we will bring fabric swatches, blind samples and a laser measure to your door — free, with no obligation.</p>
+
+      <div class="cap-points">
+        <div class="cap-point">
+          <span class="cap-point-icon"><svg class="icon icon--tiny"><use href="#i-search"/></svg></span>
+          <span><strong>We remember your search</strong><span>Your enquiry is matched to the exact query you used, so the designer arrives prepared.</span></span>
+        </div>
+        <div class="cap-point">
+          <span class="cap-point-icon"><svg class="icon icon--tiny"><use href="#i-clock"/></svg></span>
+          <span><strong>Visit within 48 hours</strong><span>Same-week installation on most roller and zebra blinds.</span></span>
+        </div>
+        <div class="cap-point">
+          <span class="cap-point-icon"><svg class="icon icon--tiny"><use href="#i-check"/></svg></span>
+          <span><strong>Stitched in our own unit</strong><span>No middlemen. 5-year warranty on motors and tracks.</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cap-aside-foot">
+      <div>
+        <p class="cap-stars">★★★★★</p>
+        <p class="cap-quote">“They measured all eleven windows in one visit and the blackout curtains were up in six days.”<br /><strong>— Shruti &amp; Karthik, Whitefield</strong></p>
+      </div>
+    </div>
+  </aside>
+
+  <main class="capture-main">
+    <div class="capture-card" id="capture-card">
+      <h2>Book a free design visit</h2>
+      <p class="lede">Two minutes to fill. A designer calls you within one working day.</p>
+
+      <div class="intent-chip" id="intent-chip" hidden>
+        <svg class="icon icon--tiny"><use href="#i-search"/></svg>
+        <span>We can see you arrived from <strong id="intent-text">a Google search</strong>. We'll bring samples for that.</span>
+      </div>
+
+      <form class="capture-form" id="capture-form" novalidate>
+        <div class="form-row">
+          <label class="form-field">
+            <span>Your name <span class="req">*</span></span>
+            <input name="name" required autocomplete="name" placeholder="Ananya Sharma" />
+          </label>
+          <label class="form-field">
+            <span>Mobile <span class="req">*</span></span>
+            <input name="phone" required autocomplete="tel" inputmode="tel" placeholder="+91 98450 12345" />
+          </label>
+        </div>
+        <div class="form-row">
+          <label class="form-field">
+            <span>Email</span>
+            <input name="email" type="email" autocomplete="email" placeholder="ananya@example.com" />
+          </label>
+          <label class="form-field">
+            <span>Area / city</span>
+            <input name="city" autocomplete="address-level2" placeholder="Whitefield, Bengaluru" />
+          </label>
+        </div>
+        <label class="form-field">
+          <span>What are you looking for?</span>
+          <select name="productId" id="capture-product">
+            <option value="">Not sure yet — help me choose</option>
+          </select>
+        </label>
+        <label class="form-field">
+          <span>What did you search for? <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted-2)">(optional)</span></span>
+          <input name="keyword" id="capture-keyword" placeholder="e.g. motorized blinds price bangalore" />
+          <span class="field-note">We use this only to send the right samples — it stays on your enquiry.</span>
+        </label>
+        <label class="form-field">
+          <span>Anything we should know?</span>
+          <textarea name="notes" rows="2" placeholder="3BHK, need blackout in bedrooms…"></textarea>
+        </label>
+
+        <p class="capture-error" id="capture-error" hidden></p>
+        <button class="btn btn--primary capture-submit" type="submit" id="capture-submit">Request my free visit</button>
+      </form>
+
+      <p class="capture-foot">By submitting you agree to be contacted about your enquiry. We never sell your details.</p>
+    </div>
+
+    <div class="capture-card" id="capture-success" hidden>
+      <div class="capture-success">
+        <div class="success-mark"><svg class="icon"><use href="#i-check"/></svg></div>
+        <h2>Thank you, <span id="success-name">there</span>.</h2>
+        <p>Your request is with our Bengaluru studio. A designer will call you within one working day to fix a measurement visit.</p>
+        <div class="success-ref">Enquiry <strong id="success-ref">MJ-0000</strong></div>
+        <div class="success-actions">
+          <a class="btn btn--ghost" href="/">Back to dashboard</a>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  const $ = (sel) => document.querySelector(sel);
+  const params = new URLSearchParams(location.search);
+
+  /* ---- Work out what this visitor searched for ---- */
+  const rawQuery =
+    params.get('q') ||
+    params.get('keyword') ||
+    params.get('utm_term') ||
+    params.get('search_term') ||
+    '';
+
+  function detectSource() {
+    if (params.get('gclid') || /googleads|gclid/i.test(location.search)) return 'google_ads';
+    if (params.get('utm_source') && /google/i.test(params.get('utm_source'))) {
+      return params.get('utm_medium') === 'cpc' ? 'google_ads' : 'google_organic';
+    }
+    if (/google\./i.test(document.referrer)) return 'google_organic';
+    return 'direct';
+  }
+
+  const source = detectSource();
+  const landingPage = `${location.pathname}${location.search}`;
+
+  if (rawQuery) {
+    $('#capture-keyword').value = rawQuery;
+    $('#intent-text').textContent = `“${rawQuery}”`;
+    $('#intent-chip').hidden = false;
+  } else if (source.startsWith('google')) {
+    $('#intent-chip').hidden = false;
+    $('#intent-text').textContent = 'Google';
+  }
+
+  /* ---- Product list ---- */
+  fetch('/api/products')
+    .then((res) => res.json())
+    .then((payload) => {
+      const select = $('#capture-product');
+      (payload.rows || []).forEach((product) => {
+        const option = document.createElement('option');
+        option.value = product.id;
+        option.textContent = `${product.name} — from ₹${product.priceFrom.toLocaleString('en-IN')}`;
+        select.appendChild(option);
+      });
+      const preset = params.get('product');
+      if (preset) {
+        const match = (payload.rows || []).find(
+          (p) => String(p.id) === preset || p.slug === preset,
+        );
+        if (match) select.value = String(match.id);
+      }
+    })
+    .catch(() => {});
+
+  /* ---- Submit ---- */
+  const form = $('#capture-form');
+  const errorBox = $('#capture-error');
+  const submitButton = $('#capture-submit');
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    errorBox.hidden = true;
+
+    const data = Object.fromEntries(new FormData(form).entries());
+    if (!data.name.trim() || !data.phone.trim()) {
+      errorBox.textContent = 'Please add your name and mobile number so we can call you back.';
+      errorBox.hidden = false;
+      return;
+    }
+
+    submitButton.disabled = true;
+    submitButton.textContent = 'Sending…';
+
+    try {
+      const response = await fetch('/api/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: data.name.trim(),
+          phone: data.phone.trim(),
+          email: data.email.trim(),
+          city: data.city.trim(),
+          productId: data.productId || null,
+          keyword: (data.keyword || rawQuery || '').trim(),
+          notes: data.notes.trim(),
+          source,
+          landingPage,
+          gclid: params.get('gclid') || '',
+          device: window.matchMedia('(max-width: 720px)').matches ? 'mobile' : 'desktop',
+          entryLabel: source.startsWith('google')
+            ? `Landing page form submitted from Google (${source === 'google_ads' ? 'paid click' : 'organic'})`
+            : 'Landing page form submitted',
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'Something went wrong.');
+
+      $('#success-name').textContent = payload.name.split(' ')[0];
+      $('#success-ref').textContent = `MJ-${String(payload.id).padStart(4, '0')}`;
+      $('#capture-card').hidden = true;
+      $('#capture-success').hidden = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (error) {
+      errorBox.textContent = error.message;
+      errorBox.hidden = false;
+      submitButton.disabled = false;
+      submitButton.textContent = 'Request my free visit';
+    }
+  });
+})();
+</script>
+</body>
+</html>

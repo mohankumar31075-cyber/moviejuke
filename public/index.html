@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Moviejuke Interiors · Search Intelligence</title>
+<meta name="description" content="See which Google searches bring in curtains, blinds and interior design customers — and exactly who those customers are." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231F4D46'/%3E%3Cpath d='M8 8h3v16H8zM21 8h3v16h-3zM8 14h16v3H8z' fill='%23E9D9BE'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;450;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+
+<svg class="icon-sprite" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.4-3.4"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.6"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16.5 4.6a3.6 3.6 0 0 1 0 6.9"/><path d="M18 14.3c2.1.6 3.5 2.3 3.5 4.7"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v12"/><path d="m7 11 5 5 5-5"/><path d="M4 19h16"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><path d="M6.2 3h3l1.6 4.2-2 1.4a12 12 0 0 0 6.6 6.6l1.4-2L21 14.8v3a2.2 2.2 0 0 1-2.4 2.2C10.7 19.2 4.8 13.3 4 5.4A2.2 2.2 0 0 1 6.2 3Z"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m3.6 7 8.4 6 8.4-6"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.6"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M18 14v4a2.5 2.5 0 0 1-2.5 2.5H6A2.5 2.5 0 0 1 3.5 18V8.5A2.5 2.5 0 0 1 6 6h4"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.6 6.3"/><path d="M20 5v6h-6"/></symbol>
+    <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m14.5 5-7 7 7 7"/></symbol>
+    <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9.5 5 7 7-7 7"/></symbol>
+    <symbol id="i-arrow-up-right" viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m4.5 12.5 5 5 10-11"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+    <symbol id="i-trend" viewBox="0 0 24 24"><path d="m3 16 5.5-6 4 3.5L20 6"/><path d="M15 6h5v5"/></symbol>
+    <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3.5 13.9 9l5.6 2-5.6 2L12 18.5 10.1 13 4.5 11l5.6-2L12 3.5Z"/><path d="M19 16.5 19.8 19l2.2.8-2.2.8L19 23l-.8-2.4-2.2-.8 2.2-.8.8-2.5Z"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  </defs>
+</svg>
+
+<div class="app-shell">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32"><path d="M7 6h3.4v20H7zM21.6 6H25v20h-3.4zM7 13.4h18v3.2H7z" fill="currentColor"/></svg>
+      </span>
+      <span class="brand-text">
+        <strong>Moviejuke</strong>
+        <small>Interiors · Bengaluru</small>
+      </span>
+    </div>
+
+    <nav class="nav" aria-label="Main">
+      <p class="nav-label">Workspace</p>
+      <a class="nav-item" href="#/overview" data-view="overview">
+        <svg class="icon"><use href="#i-grid"/></svg><span>Overview</span>
+      </a>
+      <a class="nav-item" href="#/queries" data-view="queries">
+        <svg class="icon"><use href="#i-search"/></svg><span>Google searches</span>
+        <em class="nav-count" id="nav-term-count"></em>
+      </a>
+      <a class="nav-item" href="#/customers" data-view="customers">
+        <svg class="icon"><use href="#i-users"/></svg><span>Customers</span>
+        <em class="nav-count" id="nav-customer-count"></em>
+      </a>
+      <a class="nav-item" href="#/data" data-view="data">
+        <svg class="icon"><use href="#i-upload"/></svg><span>Import &amp; export</span>
+      </a>
+
+      <p class="nav-label nav-label--spaced">Capture</p>
+      <a class="nav-item nav-item--muted" href="/capture?q=motorized+blinds+price+bangalore&utm_source=google&utm_medium=cpc&product=motorized-blinds" target="_blank" rel="noopener">
+        <svg class="icon"><use href="#i-sparkle"/></svg><span>Lead capture form</span>
+        <svg class="icon icon--tiny"><use href="#i-external"/></svg>
+      </a>
+    </nav>
+
+    <div class="sidebar-foot">
+      <div class="demo-note">
+        <strong>Demo workspace</strong>
+        <p>248 seeded enquiries across 40 Google searches. Reset any time.</p>
+        <button class="btn btn--ghost btn--sm" id="reset-demo-side">
+          <svg class="icon icon--tiny"><use href="#i-refresh"/></svg> Reset data
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <button class="icon-btn only-mobile" id="menu-btn" aria-label="Open menu">
+        <svg class="icon"><use href="#i-menu"/></svg>
+      </button>
+
+      <label class="global-search">
+        <svg class="icon"><use href="#i-search"/></svg>
+        <input type="search" id="global-search" placeholder="Search customers, emails, or a Google query…" autocomplete="off" />
+        <kbd>/</kbd>
+      </label>
+
+      <div class="topbar-right">
+        <div class="range-chips" id="range-chips" role="group" aria-label="Date range">
+          <button data-days="7">7D</button>
+          <button data-days="30" class="is-active">30D</button>
+          <button data-days="90">90D</button>
+        </div>
+        <div class="user-chip" title="Signed in as Priya (studio owner)">
+          <span class="avatar avatar--sm">PN</span>
+          <span class="user-name">Priya N.</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="content" id="content">
+
+      <!-- ======================= OVERVIEW ======================= -->
+      <section class="view" id="view-overview" data-view="overview">
+        <div class="page-head">
+          <div>
+            <p class="eyebrow">Search intelligence</p>
+            <h1>Who Googled us — and what happened next</h1>
+            <p class="page-sub" id="overview-sub">Every customer, traced back to the search that brought them in.</p>
+          </div>
+          <div class="page-actions">
+            <a class="btn btn--ghost" href="/capture?q=motorized+blinds+price+bangalore&utm_source=google&utm_medium=cpc&product=motorized-blinds" target="_blank" rel="noopener">
+              <svg class="icon icon--tiny"><use href="#i-sparkle"/></svg> Try capture form
+            </a>
+            <button class="btn btn--primary" id="overview-export">
+              <svg class="icon icon--tiny"><use href="#i-download"/></svg> Export
+            </button>
+          </div>
+        </div>
+
+        <div class="kpi-grid" id="kpis"></div>
+
+        <div class="grid grid--overview">
+          <article class="card chart-card">
+            <div class="card-head">
+              <div>
+                <h2>Enquiries captured</h2>
+                <p class="card-sub" id="chart-sub">Last 30 days · search-driven vs total</p>
+              </div>
+              <div class="seg" id="chart-metric" role="group" aria-label="Chart metric">
+                <button data-metric="searchCustomers" class="is-active">From search</button>
+                <button data-metric="qualified">Qualified</button>
+                <button data-metric="pipeline">Pipeline</button>
+              </div>
+            </div>
+            <div class="chart-wrap" id="chart"></div>
+          </article>
+
+          <article class="card funnel-card">
+            <div class="card-head">
+              <div>
+                <h2>Search to booking</h2>
+                <p class="card-sub">All data in this workspace</p>
+              </div>
+            </div>
+            <ol class="funnel" id="funnel"></ol>
+          </article>
+        </div>
+
+        <article class="card">
+          <div class="card-head">
+            <div>
+              <h2>Top performing searches</h2>
+              <p class="card-sub">Google queries ranked by the customers they produced</p>
+            </div>
+            <a class="btn btn--ghost btn--sm" href="#/queries">All 40 searches <svg class="icon icon--tiny"><use href="#i-chevron-right"/></svg></a>
+          </div>
+          <div class="table-wrap" id="term-table"></div>
+        </article>
+
+        <div class="grid grid--two">
+          <article class="card">
+            <div class="card-head">
+              <div>
+                <h2>Follow up today</h2>
+                <p class="card-sub">New enquiries older than 36 hours</p>
+              </div>
+            </div>
+            <div class="attention-list" id="attention"></div>
+          </article>
+
+          <article class="card">
+            <div class="card-head">
+              <div>
+                <h2>What customers ask for</h2>
+                <p class="card-sub">Products behind the enquiries</p>
+              </div>
+            </div>
+            <div class="product-bars" id="product-bars"></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ======================= SEARCH QUERIES ======================= -->
+      <section class="view" id="view-queries" data-view="queries">
+        <div class="page-head">
+          <div>
+            <p class="eyebrow">Acquisition</p>
+            <h1>Google searches</h1>
+            <p class="page-sub">Live queries that brought customers to Moviejuke, with the customers each one produced.</p>
+          </div>
+        </div>
+
+        <div class="summary-strip" id="q-summary"></div>
+
+        <div class="card">
+          <div class="toolbar">
+            <label class="field field--search">
+              <svg class="icon"><use href="#i-search"/></svg>
+              <input type="search" id="q-search" placeholder="Filter queries or products…" autocomplete="off" />
+            </label>
+            <label class="field">
+              <select id="q-product"><option value="">All products</option></select>
+            </label>
+            <label class="field">
+              <select id="q-source">
+                <option value="">All sources</option>
+                <option value="google_ads">Google Ads</option>
+                <option value="google_organic">Organic</option>
+                <option value="google_shopping">Shopping</option>
+              </select>
+            </label>
+            <label class="field">
+              <select id="q-sort">
+                <option value="leads">Most customers</option>
+                <option value="conversion">Best conversion</option>
+                <option value="clicks">Most clicks</option>
+                <option value="impressions">Most impressions</option>
+                <option value="pipeline">Highest pipeline</option>
+                <option value="position">Best rank</option>
+              </select>
+            </label>
+          </div>
+          <div class="table-wrap" id="q-table"></div>
+        </div>
+      </section>
+
+      <!-- ======================= CUSTOMERS ======================= -->
+      <section class="view" id="view-customers" data-view="customers">
+        <div class="page-head">
+          <div>
+            <p class="eyebrow">Customer book</p>
+            <h1>Customers</h1>
+            <p class="page-sub" id="c-sub">Every enquiry, with the search term that started it.</p>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn--ghost" id="c-export">
+              <svg class="icon icon--tiny"><use href="#i-download"/></svg> Export view
+            </button>
+            <button class="btn btn--primary" id="c-add">
+              <svg class="icon icon--tiny"><use href="#i-plus"/></svg> Add customer
+            </button>
+          </div>
+        </div>
+
+        <div class="toolbar toolbar--customers">
+          <label class="field field--search">
+            <svg class="icon"><use href="#i-search"/></svg>
+            <input type="search" id="c-search" placeholder="Name, email, phone, city, query…" autocomplete="off" />
+          </label>
+          <label class="field">
+            <select id="c-product"><option value="">All products</option></select>
+          </label>
+          <label class="field">
+            <select id="c-source">
+              <option value="">All sources</option>
+              <option value="google_ads">Google Ads</option>
+              <option value="google_organic">Organic</option>
+              <option value="google_shopping">Shopping</option>
+              <option value="direct">Direct</option>
+              <option value="referral">Referral</option>
+            </select>
+          </label>
+          <label class="field">
+            <select id="c-city"><option value="">All cities</option></select>
+          </label>
+          <label class="field">
+            <select id="c-sort">
+              <option value="newest">Newest first</option>
+              <option value="activity">Recent activity</option>
+              <option value="value">Highest quote</option>
+              <option value="budget">Highest budget</option>
+              <option value="name">Name A–Z</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="stage-chips" id="stage-chips" role="group" aria-label="Filter by stage"></div>
+        <div class="active-filters" id="active-chips"></div>
+
+        <div class="customer-grid" id="customer-grid"></div>
+        <div class="pagination" id="pagination"></div>
+      </section>
+
+      <!-- ======================= DATA ======================= -->
+      <section class="view" id="view-data" data-view="data">
+        <div class="page-head">
+          <div>
+            <p class="eyebrow">Data</p>
+            <h1>Import &amp; export</h1>
+            <p class="page-sub">Bring in leads from Google Ads lead forms, your CRM, or a spreadsheet — matched to search terms on the way in.</p>
+          </div>
+        </div>
+
+        <div class="grid grid--two">
+          <article class="card">
+            <div class="card-head">
+              <div>
+                <h2>Import customers</h2>
+                <p class="card-sub">CSV up to 5 MB · new rows are added, nothing is overwritten</p>
+              </div>
+              <a class="link" href="/api/import/template" download>
+                <svg class="icon icon--tiny"><use href="#i-download"/></svg> Template
+              </a>
+            </div>
+
+            <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload a CSV file">
+              <div class="dropzone-icon"><svg class="icon"><use href="#i-upload"/></svg></div>
+              <strong>Drop your CSV here</strong>
+              <span>or <u>browse files</u> — columns like name, keyword, product, stage are detected automatically</span>
+              <input type="file" id="file-input" accept=".csv,text/csv" hidden />
+            </div>
+
+            <div class="import-result" id="import-result" hidden></div>
+
+            <details class="field-docs">
+              <summary>What columns can I include?</summary>
+              <div class="field-docs-body">
+                <p><strong>Only <code>name</code> is required.</strong> Everything else is optional and matched by common aliases.</p>
+                <dl>
+                  <dt>keyword</dt><dd>The Google search term — also accepts <code>search_term</code>, <code>query</code>, <code>google_search</code>.</dd>
+                  <dt>product</dt><dd>Product or service name. Fuzzy-matched to the catalogue.</dd>
+                  <dt>stage</dt><dd>new, contacted, qualified, quoted, won, lost (or CRM words like "Closed Won").</dd>
+                  <dt>source</dt><dd>google_ads, google_organic, google_shopping, direct, referral…</dd>
+                  <dt>created_at</dt><dd>Any parseable date; drives the trend charts.</dd>
+                  <dt>budget / quote_value</dt><dd>Numbers; ₹ and commas are stripped.</dd>
+                </dl>
+              </div>
+            </details>
+          </article>
+
+          <div class="stack">
+            <article class="card">
+              <div class="card-head">
+                <div>
+                  <h2>Export</h2>
+                  <p class="card-sub">Download every column, or whatever the customer view is filtered to</p>
+                </div>
+              </div>
+              <div class="export-actions">
+                <a class="btn btn--primary" href="/api/export">
+                  <svg class="icon icon--tiny"><use href="#i-download"/></svg> All customers (CSV)
+                </a>
+                <button class="btn btn--ghost" id="export-filtered">
+                  <svg class="icon icon--tiny"><use href="#i-download"/></svg> Current filters
+                </button>
+              </div>
+              <p class="hint">Exports include the search term, landing page and gclid for every customer so the file can be analysed in Sheets or Looker Studio.</p>
+            </article>
+
+            <article class="card">
+              <div class="card-head">
+                <div>
+                  <h2>Demo data</h2>
+                  <p class="card-sub">Regenerate a clean dataset</p>
+                </div>
+              </div>
+              <p class="hint">This wipes the local database and reseeds 248 enquiries across 40 Google searches. Useful when you have been testing imports.</p>
+              <button class="btn btn--danger" id="reset-demo">
+                <svg class="icon icon--tiny"><use href="#i-refresh"/></svg> Reset demo data
+              </button>
+            </article>
+
+            <article class="card card--tinted">
+              <h2 class="card-title-sm">Where this data comes from</h2>
+              <p class="hint">Google never exposes who searched. This workspace joins two sources: the Google Ads / Search Console query report (impressions, clicks, position) and your own first-party enquiries (form fills, calls, lead forms), linked by search term, landing page and gclid.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- ======================= CUSTOMER DRAWER ======================= -->
+<div class="drawer-overlay" id="drawer-overlay" hidden></div>
+<aside class="drawer" id="drawer" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Customer details">
+  <div class="drawer-body" id="drawer-body"></div>
+</aside>
+
+<!-- ======================= ADD CUSTOMER MODAL ======================= -->
+<div class="modal-overlay" id="modal-overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-head">
+      <div>
+        <h2 id="modal-title">Add a customer</h2>
+        <p class="card-sub">Link them to the search term they used, if you know it.</p>
+      </div>
+      <button class="icon-btn" id="modal-close" aria-label="Close">
+        <svg class="icon"><use href="#i-x"/></svg>
+      </button>
+    </div>
+    <form id="add-form" class="form">
+      <div class="form-row">
+        <label class="form-field">
+          <span>Full name *</span>
+          <input name="name" required placeholder="Ananya Sharma" />
+        </label>
+        <label class="form-field">
+          <span>Phone</span>
+          <input name="phone" placeholder="+91 98450 12345" />
+        </label>
+      </div>
+      <div class="form-row">
+        <label class="form-field">
+          <span>Email</span>
+          <input name="email" type="email" placeholder="ananya@example.com" />
+        </label>
+        <label class="form-field">
+          <span>City</span>
+          <input name="city" placeholder="Bengaluru" />
+        </label>
+      </div>
+      <div class="form-row">
+        <label class="form-field">
+          <span>Product</span>
+          <select name="productId" id="add-product"><option value="">Not sure yet</option></select>
+        </label>
+        <label class="form-field">
+          <span>Google search term</span>
+          <input name="keyword" placeholder="blackout curtains bangalore" />
+        </label>
+      </div>
+      <div class="form-row">
+        <label class="form-field">
+          <span>Stage</span>
+          <select name="stage">
+            <option value="new">New enquiry</option>
+            <option value="contacted">Contacted</option>
+            <option value="qualified">Qualified</option>
+            <option value="quoted">Quote sent</option>
+            <option value="won">Won</option>
+            <option value="lost">Lost</option>
+          </select>
+        </label>
+        <label class="form-field">
+          <span>Budget (₹)</span>
+          <input name="budget" type="number" min="0" step="500" placeholder="25000" />
+        </label>
+      </div>
+      <label class="form-field">
+        <span>Notes</span>
+        <textarea name="notes" rows="3" placeholder="3BHK, wants blackout in bedrooms, site visit Saturday"></textarea>
+      </label>
+      <p class="form-error" id="add-error" hidden></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn--ghost" id="modal-cancel">Cancel</button>
+        <button type="submit" class="btn btn--primary">Save customer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="/app.js"></script>
+</body>
+</html>
