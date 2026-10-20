@@ -5,7 +5,8 @@ const { parseCsv, toObjects, normalizeHeader } = require('./csv');
 const { ensureSearchTerm } = require('./queries');
 
 const START = '2023-01-01';
-const END = '2026-10-20';
+// 'Till date' is the current day in the studio's time zone, never a fixed 2026 cutoff.
+const END = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Kolkata' });
 const ALIASES = {
   keyword: ['query', 'top_queries', 'search_term', 'search_terms', 'search_query', 'keyword', 'search_keyword'],
   day: ['date', 'day', 'report_date'],

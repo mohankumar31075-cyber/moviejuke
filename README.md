@@ -63,7 +63,18 @@ Clicking a customer opens a drawer with contact details, the search journey, com
 mover and a full activity timeline (search → form → call → site visit → quote → booking) with an
 "add activity" box.
 
-**5. Import & export**
+**5. Lead archive — `/leads`**
+
+A separate, shareable-in-your-private-workspace lead list for **January 1, 2023 through today**.
+It uses the actual enquiry records in SQLite (not anonymous Google searches), with quick year
+shortcuts, start/end dates, filters for keyword/name/product/stage/source/city, pagination, an
+activity drawer and a CSV download matching the current filters. The summary shows how many months
+have **recorded** leads; empty years are not filled with estimates. The demo banner explicitly
+labels the seeded customers as fictional; **no real 2023–present lead export has been provided**.
+Access to real leads remains password-protected in real-data mode. Do not distribute the Arena
+preview URL to share private customer information; export only where you have permission.
+
+**6. Import & export**
 
 - CSV import with alias detection (`keyword` / `search_term` / `query` / `google_search`, …),
   fuzzy product matching, ₹/comma-tolerant numbers, many date formats, stage normalisation
@@ -95,11 +106,11 @@ The database file is gitignored — a fresh clone reseeds itself. Use **Reset de
 
 ---
 
-## Importing the requested historical records (2023-01-01 to 2026-10-20)
+## Importing historical records (2023-01-01 through today)
 
 **No real exports are included in this repository.** The initial 248 enquiries and 40 queries
-are fictional. January 1, 2023 through October 20, 2026 is **3 years, 9 months and 20 days**, not
-two years; the import form defaults to the requested dates.
+are fictional. The archive and import form start on January 1, 2023 and end on the **current date
+in Asia/Kolkata**. As of October 20, 2026, that is almost four years, not two.
 
 1. Export a **dated** query report from Google Ads or Search Console. Required CSV headers:
    `date,query,impressions,clicks`. `search_term`, `top_queries`, `impr`, `position`,
@@ -169,6 +180,7 @@ public/
   app.js       view rendering, chart, drawer, filters, import
   styles.css   design system
   capture.html standalone lead-capture landing page
+  leads.html   separate date-filtered lead archive and CSV sharing page
 ```
 
 ### API

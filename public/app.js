@@ -1508,6 +1508,10 @@
      Boot
      ========================================================= */
   async function boot() {
+    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Kolkata' });
+    $('#history-to').value = today;
+    $('#history-to').max = today;
+    $('#history-from').max = today;
     bindEvents();
     state.view = routeFromHash();
     navigate(state.view);

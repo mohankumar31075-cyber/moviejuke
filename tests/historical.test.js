@@ -33,18 +33,26 @@ test('dated export imports, authentication, deduplication and historical coverag
   assert.equal(dayFrom('31/02/2023'), null);
   assert.equal(dayFrom('20/10/2026'), '2026-10-20');
   assert.equal((await request('/api/reference')).data.customerCount, 248);
+  const archive = await request('/leads');
+  assert.equal(archive.status, 200);
+  assert.match(archive.data, /Lead archive · Moviejuke Interiors/);
+  assert.match(archive.data, /id="lead-rows"/);
+  const demoExport = await fetch(`${base}/api/export?from=2023-01-01&to=2026-10-20`);
+  assert.match(demoExport.headers.get('content-disposition'), /moviejuke-DEMO-leads-2023-01-01-to-2026-10-20\.csv/);
   assert.equal((await request('/api/import/search', csv('date,query,impressions,clicks\n2023-01-01,blinds,9,2', false))).status, 409);
   assert.equal((await request('/api/demo/replace', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ confirm: 'REPLACE DEMO DATA' }) })).status, 200);
   assert.equal((await request('/api/reference')).status, 401);
   assert.equal((await request('/', { headers: basic })).status, 200);
+  assert.equal((await request('/leads')).status, 401);
+  assert.equal((await request('/leads', { headers: basic })).status, 200);
   assert.equal((await request('/api/reference', { headers: basic })).data.customerCount, 0);
 
   const report = 'Date,Top queries,Impressions,Clicks,Position,Landing page\n2023-01-01,Blackout curtains Bangalore,100,8,2.3,/home\n2023-01-01,Blackout curtains Bangalore,25,2,2.5,/home\n2026-10-20,Roller blinds Bengaluru,200,16,3.1,/blinds\n2027-01-01,Outside window,10,1,1,/home\nbad,Bad date,8,1,3,/home\n';
-  let result = await request('/api/import/search', csv(report));
+  let result = await request('/api/import/search?from=2023-01-01&to=2026-10-20', csv(report));
   assert.equal(result.data.imported, 2);
   assert.equal(result.data.outOfRange, 1);
   assert.equal(result.data.skipped, 1);
-  assert.equal((await request('/api/import/search', csv(report))).data.imported, 2);
+  assert.equal((await request('/api/import/search?from=2023-01-01&to=2026-10-20', csv(report))).data.imported, 2);
   assert.equal(connect().prepare("SELECT clicks FROM search_terms WHERE keyword = 'blackout curtains bangalore'").get().clicks, 10);
 
   result = await request('/api/import/search?source=google_ads', csv('Search terms report\nJanuary 2023 - October 2026\ndate,Search term,Impr.,Clicks\n2023-01-01,Blackout curtains Bangalore,70,7'));
@@ -58,6 +66,14 @@ test('dated export imports, authentication, deduplication and historical coverag
   assert.equal(result.data.skipped, 2);
   assert.equal((await request('/api/import?from=2023-01-01&to=2026-10-20', csv(enquiries))).data.imported, 0);
   assert.equal((await request('/api/reference', { headers: basic })).data.customerCount, 1);
+  assert.equal((await request('/api/customers?from=2023-01-01&to=2023-01-05', { headers: basic })).data.total, 1);
+  assert.equal((await request('/api/customers?from=2023-01-01&to=2023-01-04', { headers: basic })).data.total, 0);
+  const filteredExport = await request('/api/export?from=2023-01-01&to=2023-01-05', { headers: basic });
+  assert.equal(filteredExport.status, 200);
+  assert.match(filteredExport.data, /Real Enquiry/);
+  assert.doesNotMatch(filteredExport.data, /Too Old/);
+  const exportHeaders = await fetch(`${base}/api/export?from=2023-01-01&to=2023-01-05`, { headers: basic });
+  assert.match(exportHeaders.headers.get('content-disposition'), /moviejuke-leads-2023-01-01-to-2023-01-05\.csv/);
   const history = (await request('/api/history?from=2023-01-01&to=2026-10-20', { headers: basic })).data;
   assert.equal(history.totals.impressions, 395);
   assert.equal(history.totals.customers, 1);

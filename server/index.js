@@ -421,7 +421,14 @@ app.get('/api/export', (req, res) => {
     notes: r.notes,
   }));
   res.type('text/csv');
-  res.setHeader('Content-Disposition', 'attachment; filename="moviejuke-customers.csv"');
+  const startDate = dayFrom(req.query.from) || null;
+  const endDate = dayFrom(req.query.to) || null;
+  const dataMode = connect().prepare("SELECT value FROM meta WHERE key = 'data_mode'").get()?.value;
+  const prefix = dataMode === 'real' ? 'moviejuke' : 'moviejuke-DEMO';
+  const filename = startDate && endDate
+    ? `${prefix}-leads-${startDate}-to-${endDate}.csv`
+    : `${prefix}-customers.csv`;
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   res.send(toCsv(headers, mapped, headers));
 });
 
