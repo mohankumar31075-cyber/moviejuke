@@ -1,0 +1,11 @@
+node_modules/
+dist/
+build/
+coverage/
+.server-data/db.json
+*.log
+.DS_Store
+.env
+.env.local
+android/
+ios/
